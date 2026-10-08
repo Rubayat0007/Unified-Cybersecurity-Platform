@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from typing import Any
 
 from fastapi import FastAPI
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from api.schemas import UnifiedAssessmentResponse
 from api.serialization import serialize_assessment
@@ -73,6 +73,12 @@ app.mount(
 class AssessmentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    event_id: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=128,
+    )
+
     ai_nids_result: dict[str, Any] | None = None
     phishvision_result: dict[str, Any] | None = None
 
@@ -102,6 +108,7 @@ def assess_endpoint(
     result = run_assessment(
         ai_nids_result=request.ai_nids_result,
         phishvision_result=request.phishvision_result,
+        event_id=request.event_id,
     )
 
     return serialize_assessment(result)

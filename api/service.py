@@ -6,9 +6,11 @@ from core.orchestration.engine import UnifiedAssessment, assess
 def run_assessment(
     ai_nids_result: Mapping[str, Any] | None = None,
     phishvision_result: Mapping[str, Any] | None = None,
+    event_id: str | None = None,
 ) -> UnifiedAssessment:
     """Public service boundary for unified security assessment."""
     return assess(
         ai_nids_result=ai_nids_result,
         phishvision_result=phishvision_result,
+        event_id=event_id,
     )

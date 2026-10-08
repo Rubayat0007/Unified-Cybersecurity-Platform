@@ -96,5 +96,33 @@ class TestApiService(unittest.TestCase):
         )
 
 
+    def test_supplied_event_id_is_preserved(self):
+        result = run_assessment(
+            self._nids_result(),
+            self._phishvision_result(),
+            event_id="evt-2026-0001",
+        )
+
+        self.assertEqual(
+            result.audit.event_id,
+            "evt-2026-0001",
+        )
+        self.assertEqual(
+            result.audit.overall_severity,
+            Severity.HIGH,
+        )
+        self.assertEqual(
+            result.audit.recommended_action,
+            RecommendedAction.INVESTIGATE,
+        )
+        self.assertTrue(
+            result.audit.human_review_required
+        )
+        self.assertEqual(
+            result.audit.source_statuses["ai_nids"].value,
+            "available",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

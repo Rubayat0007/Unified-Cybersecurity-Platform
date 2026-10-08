@@ -64,8 +64,23 @@ class OperationalDecisionResponse(BaseModel):
     primary_threat: str | None = None
 
 
+class AssessmentAuditResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    event_id: str
+    processed_at: datetime
+    source_statuses: dict[str, SignalStatus] = Field(
+        default_factory=dict
+    )
+    overall_severity: Severity
+    recommended_action: RecommendedAction
+    primary_threat: str | None = None
+    human_review_required: bool
+
+
 class UnifiedAssessmentResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     assessment: SecurityAssessmentResponse
     decision: OperationalDecisionResponse
+    audit: AssessmentAuditResponse

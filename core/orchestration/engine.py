@@ -1,3 +1,6 @@
+from uuid import uuid4
+
+from core.audit.model import AssessmentAudit
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -19,6 +22,7 @@ from core.models.signal import SecuritySignal
 class UnifiedAssessment:
     assessment: SecurityAssessment
     decision: OperationalDecision
+    audit: AssessmentAudit
 
 
 def _unavailable_signal(
@@ -54,6 +58,7 @@ def _error_signal(
 def assess(
     ai_nids_result: Mapping[str, Any] | None = None,
     phishvision_result: Mapping[str, Any] | None = None,
+    event_id: str | None = None,
 ) -> UnifiedAssessment:
     """Orchestrate source adapters, correlation, and operational decision."""
 
@@ -108,8 +113,22 @@ def assess(
             )
 
     assessment = correlate(tuple(signals))
+    decision = decide(assessment)
+
+    resolved_event_id = event_id or str(uuid4())
+
+    audit = AssessmentAudit(
+        event_id=resolved_event_id,
+        processed_at=assessment.timestamp,
+        source_statuses=dict(assessment.component_status),
+        overall_severity=assessment.overall_severity,
+        recommended_action=decision.action,
+        primary_threat=assessment.primary_threat,
+        human_review_required=decision.requires_human_review,
+    )
 
     return UnifiedAssessment(
         assessment=assessment,
-        decision=decide(assessment),
+        decision=decision,
+        audit=audit,
     )

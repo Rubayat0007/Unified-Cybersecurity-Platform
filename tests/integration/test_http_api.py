@@ -115,6 +115,10 @@ class TestHttpApi(unittest.TestCase):
             "OperationalDecisionResponse",
             schemas,
         )
+        self.assertIn(
+            "AssessmentAuditResponse",
+            schemas,
+        )
 
         operation = payload["paths"]["/v1/assess"]["post"]
 
@@ -163,6 +167,47 @@ class TestHttpApi(unittest.TestCase):
             "/v1/assess",
             json={
                 "ai_nids_result": value,
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+
+
+    def test_supplied_event_id_is_returned_in_audit(self):
+        response = self.client.post(
+            "/v1/assess",
+            json={
+                "event_id": "evt-http-0001",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+
+        self.assertEqual(
+            payload["audit"]["event_id"],
+            "evt-http-0001",
+        )
+        self.assertEqual(
+            payload["audit"]["overall_severity"],
+            "unknown",
+        )
+        self.assertEqual(
+            payload["audit"]["recommended_action"],
+            "investigate",
+        )
+        self.assertEqual(
+            payload["audit"]["source_statuses"]["ai_nids"],
+            "unavailable",
+        )
+
+    def test_event_id_length_is_bounded(self):
+        response = self.client.post(
+            "/v1/assess",
+            json={
+                "event_id": "A" * 129,
             },
         )
 
