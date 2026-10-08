@@ -3,6 +3,7 @@ from typing import Any
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from api.schemas import UnifiedAssessmentResponse
 from api.serialization import serialize_assessment
 from api.service import run_assessment
 
@@ -23,8 +24,13 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/v1/assess")
-def assess_endpoint(request: AssessmentRequest) -> dict[str, Any]:
+@app.post(
+    "/v1/assess",
+    response_model=UnifiedAssessmentResponse,
+)
+def assess_endpoint(
+    request: AssessmentRequest,
+) -> dict[str, Any]:
     result = run_assessment(
         ai_nids_result=request.ai_nids_result,
         phishvision_result=request.phishvision_result,

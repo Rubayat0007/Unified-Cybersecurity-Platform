@@ -94,5 +94,37 @@ class TestHttpApi(unittest.TestCase):
         )
 
 
+
+    def test_openapi_exposes_assessment_response_schema(self):
+        response = self.client.get("/openapi.json")
+
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+        schemas = payload["components"]["schemas"]
+
+        self.assertIn(
+            "UnifiedAssessmentResponse",
+            schemas,
+        )
+        self.assertIn(
+            "SecurityAssessmentResponse",
+            schemas,
+        )
+        self.assertIn(
+            "OperationalDecisionResponse",
+            schemas,
+        )
+
+        operation = payload["paths"]["/v1/assess"]["post"]
+
+        self.assertEqual(
+            operation["responses"]["200"]["content"][
+                "application/json"
+            ]["schema"]["$ref"],
+            "#/components/schemas/UnifiedAssessmentResponse",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
