@@ -13,6 +13,8 @@ class TestSettings(unittest.TestCase):
             "UCP_MAX_REQUEST_BYTES",
             "UCP_AI_NIDS_ENABLED",
             "UCP_PHISHVISION_ENABLED",
+            "UCP_PROVIDER_TIMEOUT_SECONDS",
+            "UCP_PROVIDER_MAX_OUTPUT_BYTES",
         ):
             os.environ.pop(name, None)
 
@@ -51,6 +53,26 @@ class TestSettings(unittest.TestCase):
 
     def test_invalid_timeout_is_rejected(self):
         os.environ["UCP_REQUEST_TIMEOUT_SECONDS"] = "0"
+
+        with self.assertRaises(ValueError):
+            load_settings()
+
+
+
+    def test_provider_runtime_defaults_are_safe(self):
+        settings = load_settings()
+
+        self.assertEqual(
+            settings.provider_timeout_seconds,
+            10,
+        )
+        self.assertEqual(
+            settings.provider_max_output_bytes,
+            1_048_576,
+        )
+
+    def test_invalid_provider_timeout_is_rejected(self):
+        os.environ["UCP_PROVIDER_TIMEOUT_SECONDS"] = "0"
 
         with self.assertRaises(ValueError):
             load_settings()

@@ -26,6 +26,8 @@ class Settings:
     log_level: str
     request_timeout_seconds: int
     max_request_bytes: int
+    provider_timeout_seconds: int
+    provider_max_output_bytes: int
     ai_nids_enabled: bool
     phishvision_enabled: bool
 
@@ -80,6 +82,14 @@ def load_settings() -> Settings:
         ),
         max_request_bytes=_positive_int(
             "UCP_MAX_REQUEST_BYTES",
+            1_048_576,
+        ),
+        provider_timeout_seconds=_positive_int(
+            "UCP_PROVIDER_TIMEOUT_SECONDS",
+            10,
+        ),
+        provider_max_output_bytes=_positive_int(
+            "UCP_PROVIDER_MAX_OUTPUT_BYTES",
             1_048_576,
         ),
         ai_nids_enabled=_bool(
