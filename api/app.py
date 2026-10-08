@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from fastapi.staticfiles import StaticFiles
 from typing import Any
 
 from fastapi import FastAPI
@@ -56,6 +59,14 @@ def _validate_payload(value: Any) -> None:
 app = FastAPI(
     title="Unified Cybersecurity Platform",
     version="0.1.0",
+)
+
+DASHBOARD_DIR = Path(__file__).resolve().parents[1] / "dashboard"
+
+app.mount(
+    "/dashboard",
+    StaticFiles(directory=str(DASHBOARD_DIR), html=True),
+    name="dashboard",
 )
 
 

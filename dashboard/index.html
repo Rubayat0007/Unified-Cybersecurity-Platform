@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Cybersecurity Platform</title>
+    <style>
+        :root {
+            font-family: Arial, sans-serif;
+            color: #17202a;
+            background: #f4f6f8;
+        }
+
+        body {
+            margin: 0;
+        }
+
+        header {
+            background: #17202a;
+            color: white;
+            padding: 24px 32px;
+        }
+
+        header h1 {
+            margin: 0 0 6px;
+            font-size: 28px;
+        }
+
+        header p {
+            margin: 0;
+            opacity: 0.8;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 32px auto;
+            padding: 0 20px 40px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        #run-demo {
+            background: #1f6feb;
+            color: white;
+        }
+
+        #clear {
+            margin-left: 8px;
+            background: #d9dee3;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .card {
+            background: #eef1f4;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.65;
+        }
+
+        .value {
+            margin-top: 6px;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .signals {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .signal {
+            border-left: 4px solid #87909a;
+            padding: 14px;
+            background: #f7f8fa;
+        }
+
+        .signal strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .status {
+            margin-top: 4px;
+            font-size: 13px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #17202a;
+            color: #f4f6f8;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .muted {
+            opacity: 0.65;
+        }
+
+        @media (max-width: 850px) {
+            .summary,
+            .signals {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 520px) {
+            .summary,
+            .signals {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Unified Cybersecurity Platform</h1>
+    <p>Correlated security assessment and operational decision dashboard</p>
+</header>
+
+<main>
+    <div>
+        <button id="run-demo">Run Demo Assessment</button>
+        <button id="clear">Clear</button>
+    </div>
+
+    <section class="panel">
+        <div class="summary">
+            <div class="card">
+                <div class="label">Overall Severity</div>
+                <div class="value" id="severity">—</div>
+            </div>
+            <div class="card">
+                <div class="label">Primary Threat</div>
+                <div class="value" id="primary-threat">—</div>
+            </div>
+            <div class="card">
+                <div class="label">Action</div>
+                <div class="value" id="action">—</div>
+            </div>
+            <div class="card">
+                <div class="label">Human Review</div>
+                <div class="value" id="human-review">—</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Component Signals</h2>
+        <div id="signals" class="signals">
+            <div class="muted">No assessment loaded.</div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Decision Reason</h2>
+        <p id="reason" class="muted">No assessment loaded.</p>
+    </section>
+
+    <section class="panel">
+        <h2>Assessment Metadata</h2>
+        <pre id="metadata">No assessment loaded.</pre>
+    </section>
+</main>
+
+<script>
+    const demoRequest = {
+        ai_nids_result: {
+            prediction: 1,
+            confidence: 0.94,
+            attack_probability: 0.91,
+            severity: "HIGH",
+            packet_count: 100,
+            duration: 8.0,
+            flows: []
+        },
+        phishvision_result: {
+            text_analysis: {
+                matches: [],
+                score: 10.0
+            },
+            url_analysis: {
+                hostname: "example.test",
+                indicators: [],
+                matched_keywords: [],
+                score: 20.0
+            },
+            cnn_analysis: {
+                prediction: "phishing",
+                phishing_probability: 0.91,
+                legitimate_probability: 0.09,
+                threshold: 0.35,
+                model_loaded: true
+            },
+            risk: {
+                overall_score: 48.4,
+                risk_level: "MEDIUM"
+            },
+            security_assessment: {
+                evidence: [
+                    {
+                        source: "CNN",
+                        category: "visual_phishing_signal",
+                        severity: "HIGH",
+                        evidence:
+                            "CNN detected a visual phishing signal with p(phishing)=0.9100"
+                    }
+                ]
+            }
+        }
+    };
+
+    function setText(id, value) {
+        document.getElementById(id).textContent = value ?? "—";
+    }
+
+    function renderSignals(signals, componentStatus) {
+        const container = document.getElementById("signals");
+        container.innerHTML = "";
+
+        for (const [name, status] of Object.entries(componentStatus)) {
+            const related = signals.filter(
+                signal => signal.source === name
+            );
+
+            const card = document.createElement("div");
+            card.className = "signal";
+
+            const title = document.createElement("strong");
+            title.textContent = name;
+
+            const statusLine = document.createElement("div");
+            statusLine.className = "status";
+            statusLine.textContent = `Status: ${status}`;
+
+            card.appendChild(title);
+            card.appendChild(statusLine);
+
+            for (const signal of related) {
+                const detail = document.createElement("div");
+                detail.className = "status";
+                detail.textContent =
+                    `${signal.signal_type}: ` +
+                    `${signal.severity ?? "unknown"} ` +
+                    `(${signal.status})`;
+                card.appendChild(detail);
+            }
+
+            container.appendChild(card);
+        }
+
+        if (container.children.length === 0) {
+            container.textContent = "No assessment signals available.";
+        }
+    }
+
+    function renderAssessment(payload) {
+        const assessment = payload.assessment;
+        const decision = payload.decision;
+
+        setText("severity", assessment.overall_severity);
+        setText("primary-threat", assessment.primary_threat);
+        setText("action", decision.action);
+        setText(
+            "human-review",
+            decision.requires_human_review ? "REQUIRED" : "NO"
+        );
+        setText("reason", decision.reason);
+
+        renderSignals(
+            assessment.signals,
+            assessment.component_status
+        );
+
+        document.getElementById("metadata").textContent =
+            JSON.stringify(assessment.metadata, null, 2);
+    }
+
+    function clearDashboard() {
+        setText("severity", "—");
+        setText("primary-threat", "—");
+        setText("action", "—");
+        setText("human-review", "—");
+        setText("reason", "No assessment loaded.");
+
+        document.getElementById("signals").innerHTML =
+            '<div class="muted">No assessment loaded.</div>';
+
+        document.getElementById("metadata").textContent =
+            "No assessment loaded.";
+    }
+
+    document.getElementById("run-demo").addEventListener(
+        "click",
+        async () => {
+            const response = await fetch("/v1/assess", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(demoRequest)
+            });
+
+            if (!response.ok) {
+                throw new Error(
+                    `Assessment request failed: ${response.status}`
+                );
+            }
+
+            renderAssessment(await response.json());
+        }
+    );
+
+    document.getElementById("clear").addEventListener(
+        "click",
+        clearDashboard
+    );
+</script>
+</body>
+</html>
