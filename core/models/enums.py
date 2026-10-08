@@ -38,3 +38,10 @@ class RecommendedAction(str, Enum):
     WARN = "warn"
     INVESTIGATE = "investigate"
     BLOCK = "block"
+
+
+class ComponentHealth(str, Enum):
+    STARTING = "starting"
+    READY = "ready"
+    DEGRADED = "degraded"
+    UNAVAILABLE = "unavailable"

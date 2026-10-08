@@ -26,7 +26,10 @@ class TestHttpApi(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
-            {"status": "ok"},
+            {
+                "status": "ok",
+                "environment": "development",
+            },
         )
 
     def test_assessment_endpoint_returns_unified_result(self):
@@ -212,6 +215,66 @@ class TestHttpApi(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 422)
+
+
+    def test_readiness_endpoint_reports_components(self):
+        response = self.client.get("/ready")
+
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+
+        self.assertIn("ready", payload)
+        self.assertIn("components", payload)
+        self.assertIn(
+            "ai_nids",
+            payload["components"],
+        )
+        self.assertIn(
+            "phishvision",
+            payload["components"],
+        )
+
+
+    def test_readiness_reports_unintegrated_providers_as_degraded(self):
+        response = self.client.get("/ready")
+
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+
+        self.assertTrue(payload["ready"])
+        self.assertEqual(
+            payload["mode"],
+            "result_ingestion",
+        )
+        self.assertEqual(
+            payload["components"]["ai_nids"],
+            "degraded",
+        )
+        self.assertEqual(
+            payload["components"]["phishvision"],
+            "degraded",
+        )
+
+    def test_request_body_size_limit_is_enforced(self):
+        from api.app import settings
+
+        oversized_body = (
+            b'{"padding":"' +
+            b"A" * (settings.max_request_bytes + 1) +
+            b'"}'
+        )
+
+        response = self.client.post(
+            "/v1/assess",
+            content=oversized_body,
+            headers={
+                "Content-Type": "application/json",
+            },
+        )
+
+        self.assertEqual(response.status_code, 413)
 
 
 if __name__ == "__main__":

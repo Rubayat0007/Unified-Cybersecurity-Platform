@@ -3,6 +3,10 @@ from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 from typing import Any
 
+from core.config.settings import load_settings
+from core.models.enums import ComponentHealth
+from api.middleware import MaxRequestBodySizeMiddleware
+
 from fastapi import FastAPI
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -61,6 +65,13 @@ app = FastAPI(
     version="0.1.0",
 )
 
+settings = load_settings()
+
+app.add_middleware(
+    MaxRequestBodySizeMiddleware,
+    max_body_size=settings.max_request_bytes,
+)
+
 DASHBOARD_DIR = Path(__file__).resolve().parents[1] / "dashboard"
 
 app.mount(
@@ -95,7 +106,32 @@ class AssessmentRequest(BaseModel):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "environment": settings.environment,
+    }
+
+
+@app.get("/ready")
+def readiness() -> dict[str, object]:
+    components = {
+        "ai_nids": (
+            ComponentHealth.DEGRADED.value
+            if settings.ai_nids_enabled
+            else ComponentHealth.UNAVAILABLE.value
+        ),
+        "phishvision": (
+            ComponentHealth.DEGRADED.value
+            if settings.phishvision_enabled
+            else ComponentHealth.UNAVAILABLE.value
+        ),
+    }
+
+    return {
+        "ready": True,
+        "mode": "result_ingestion",
+        "components": components,
+    }
 
 
 @app.post(
