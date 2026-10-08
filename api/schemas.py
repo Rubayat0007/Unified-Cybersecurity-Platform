@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from core.models.enums import (
     RecommendedAction,
@@ -21,7 +21,7 @@ class EvidenceResponse(BaseModel):
     evidence_type: str | None = None
     value: Any = None
     timestamp: datetime
-    metadata: dict[str, Any] = {}
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class SecuritySignalResponse(BaseModel):
@@ -36,8 +36,8 @@ class SecuritySignalResponse(BaseModel):
     confidence: float | None = None
     severity: Severity | None = None
     timestamp: datetime
-    evidence: list[Any] = []
-    metadata: dict[str, Any] = {}
+    evidence: list[Any] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class SecurityAssessmentResponse(BaseModel):
@@ -45,13 +45,13 @@ class SecurityAssessmentResponse(BaseModel):
 
     overall_severity: Severity
     primary_threat: str | None = None
-    threats: list[str] = []
-    signals: list[SecuritySignalResponse] = []
-    evidence: list[EvidenceResponse] = []
-    component_status: dict[str, SignalStatus] = {}
+    threats: list[str] = Field(default_factory=list)
+    signals: list[SecuritySignalResponse] = Field(default_factory=list)
+    evidence: list[EvidenceResponse] = Field(default_factory=list)
+    component_status: dict[str, SignalStatus] = Field(default_factory=dict)
     recommended_action: RecommendedAction
     timestamp: datetime
-    metadata: dict[str, Any] = {}
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class OperationalDecisionResponse(BaseModel):

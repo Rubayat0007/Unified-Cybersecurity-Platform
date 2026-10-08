@@ -126,5 +126,48 @@ class TestHttpApi(unittest.TestCase):
         )
 
 
+
+    def test_unknown_top_level_request_field_is_rejected(self):
+        response = self.client.post(
+            "/v1/assess",
+            json={
+                "unexpected": "value",
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_oversized_nested_string_is_rejected(self):
+        response = self.client.post(
+            "/v1/assess",
+            json={
+                "phishvision_result": {
+                    "text_analysis": {
+                        "matches": [],
+                        "score": 10.0,
+                        "payload": "A" * 4097,
+                    },
+                },
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_deeply_nested_payload_is_rejected(self):
+        value = "safe"
+
+        for _ in range(9):
+            value = {"nested": value}
+
+        response = self.client.post(
+            "/v1/assess",
+            json={
+                "ai_nids_result": value,
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+
 if __name__ == "__main__":
     unittest.main()
