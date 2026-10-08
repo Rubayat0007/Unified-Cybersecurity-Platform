@@ -1,0 +1,9 @@
+{
+  "prediction": 1,
+  "confidence": 0.94,
+  "attack_probability": 0.91,
+  "severity": "HIGH",
+  "packet_count": 100,
+  "duration": 8.0,
+  "flows": []
+}

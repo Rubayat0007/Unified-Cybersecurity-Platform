@@ -1,0 +1,33 @@
+{
+  "text_analysis": {
+    "matches": [],
+    "score": 10.0
+  },
+  "url_analysis": {
+    "hostname": "example.test",
+    "indicators": [],
+    "matched_keywords": [],
+    "score": 20.0
+  },
+  "cnn_analysis": {
+    "prediction": "phishing",
+    "phishing_probability": 0.91,
+    "legitimate_probability": 0.09,
+    "threshold": 0.35,
+    "model_loaded": true
+  },
+  "risk": {
+    "overall_score": 48.4,
+    "risk_level": "MEDIUM"
+  },
+  "security_assessment": {
+    "evidence": [
+      {
+        "source": "CNN",
+        "category": "visual_phishing_signal",
+        "severity": "HIGH",
+        "evidence": "CNN detected a visual phishing signal with p(phishing)=0.9100"
+      }
+    ]
+  }
+}
