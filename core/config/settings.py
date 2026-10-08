@@ -86,7 +86,7 @@ def load_settings() -> Settings:
         ),
         provider_timeout_seconds=_positive_int(
             "UCP_PROVIDER_TIMEOUT_SECONDS",
-            10,
+            30,
         ),
         provider_max_output_bytes=_positive_int(
             "UCP_PROVIDER_MAX_OUTPUT_BYTES",

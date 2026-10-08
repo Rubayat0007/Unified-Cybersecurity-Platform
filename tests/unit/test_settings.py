@@ -64,7 +64,7 @@ class TestSettings(unittest.TestCase):
 
         self.assertEqual(
             settings.provider_timeout_seconds,
-            10,
+            30,
         )
         self.assertEqual(
             settings.provider_max_output_bytes,
