@@ -155,5 +155,54 @@ class TestOrchestrationEngine(unittest.TestCase):
         )
 
 
+    def test_event_id_is_generated_when_not_supplied(self):
+        result = assess(
+            ai_nids_result=self._nids_result(),
+            phishvision_result=self._phishvision_result(),
+        )
+
+        self.assertIsInstance(result.audit.event_id, str)
+        self.assertTrue(result.audit.event_id)
+
+        parts = result.audit.event_id.split("-")
+        self.assertEqual(len(parts), 5)
+
+    def test_audit_matches_final_assessment_and_decision(self):
+        result = assess(
+            ai_nids_result=self._nids_result(),
+            phishvision_result=self._phishvision_result(),
+            event_id="evt-audit-0001",
+        )
+
+        self.assertEqual(
+            result.audit.event_id,
+            "evt-audit-0001",
+        )
+        self.assertEqual(
+            result.audit.processed_at,
+            result.assessment.timestamp,
+        )
+        self.assertEqual(
+            result.audit.overall_severity,
+            result.assessment.overall_severity,
+        )
+        self.assertEqual(
+            result.audit.recommended_action,
+            result.decision.action,
+        )
+        self.assertEqual(
+            result.audit.primary_threat,
+            result.assessment.primary_threat,
+        )
+        self.assertEqual(
+            result.audit.human_review_required,
+            result.decision.requires_human_review,
+        )
+        self.assertEqual(
+            result.audit.source_statuses,
+            result.assessment.component_status,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
