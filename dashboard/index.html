@@ -169,6 +169,14 @@
                 <div class="label">Human Review</div>
                 <div class="value" id="human-review">—</div>
             </div>
+            <div class="card">
+                <div class="label">Event ID</div>
+                <div class="value" id="event-id">—</div>
+            </div>
+            <div class="card">
+                <div class="label">Processed At</div>
+                <div class="value" id="processed-at">—</div>
+            </div>
         </div>
     </section>
 
@@ -288,6 +296,8 @@
         setText("severity", assessment.overall_severity);
         setText("primary-threat", assessment.primary_threat);
         setText("action", decision.action);
+        setText("event-id", payload.audit.event_id);
+        setText("processed-at", payload.audit.processed_at);
         setText(
             "human-review",
             decision.requires_human_review ? "REQUIRED" : "NO"
@@ -300,8 +310,21 @@
         );
 
         document.getElementById("metadata").textContent =
-            JSON.stringify(assessment.metadata, null, 2);
-    }
+            JSON.stringify(
+                {
+                    assessment: assessment.metadata,
+                    audit: {
+                        source_statuses: payload.audit.source_statuses,
+                        overall_severity: payload.audit.overall_severity,
+                        recommended_action: payload.audit.recommended_action,
+                        human_review_required:
+                            payload.audit.human_review_required
+                    }
+                },
+                null,
+                2
+            );
+            }
 
     function clearDashboard() {
         setText("severity", "—");
@@ -309,6 +332,8 @@
         setText("action", "—");
         setText("human-review", "—");
         setText("reason", "No assessment loaded.");
+        setText("event-id", "—");
+        setText("processed-at", "—");
 
         document.getElementById("signals").innerHTML =
             '<div class="muted">No assessment loaded.</div>';

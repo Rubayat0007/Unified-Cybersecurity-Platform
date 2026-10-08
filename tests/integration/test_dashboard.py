@@ -40,5 +40,14 @@ class TestDashboard(unittest.TestCase):
         )
 
 
+    def test_dashboard_contains_audit_fields(self):
+        response = self.client.get("/dashboard/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('id="event-id"', response.text)
+        self.assertIn('id="processed-at"', response.text)
+        self.assertIn("payload.audit.event_id", response.text)
+
+
 if __name__ == "__main__":
     unittest.main()
