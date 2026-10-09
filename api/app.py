@@ -1,3 +1,10 @@
+from threading import Lock
+
+from fastapi import FastAPI, HTTPException, Query, Request
+from starlette.concurrency import run_in_threadpool
+from core.providers.phishvision import PhishVisionProvider
+from core.providers.worker import WorkerResponseError
+
 from pathlib import Path
 
 from fastapi.staticfiles import StaticFiles
@@ -67,9 +74,44 @@ app = FastAPI(
 
 settings = load_settings()
 
+_phishvision_provider: PhishVisionProvider | None = None
+_phishvision_provider_lock = Lock()
+
+
+def get_phishvision_provider() -> PhishVisionProvider:
+    """Initialize the PhishVision worker only when the image API is used."""
+    global _phishvision_provider
+
+    if not settings.phishvision_enabled:
+        raise RuntimeError("PhishVision provider is disabled")
+
+    with _phishvision_provider_lock:
+        if _phishvision_provider is None:
+            _phishvision_provider = (
+                PhishVisionProvider.from_environment(settings)
+            )
+
+        return _phishvision_provider
+
+
+@app.on_event("shutdown")
+def shutdown_phishvision_provider() -> None:
+    """Release the persistent PhishVision worker during application shutdown."""
+    global _phishvision_provider
+
+    with _phishvision_provider_lock:
+        provider = _phishvision_provider
+        _phishvision_provider = None
+
+    if provider is not None:
+        provider.close()
+
 app.add_middleware(
     MaxRequestBodySizeMiddleware,
     max_body_size=settings.max_request_bytes,
+    path_limits={
+        "/v1/assess/image": settings.max_image_request_bytes,
+    },
 )
 
 DASHBOARD_DIR = Path(__file__).resolve().parents[1] / "dashboard"
@@ -146,5 +188,98 @@ def assess_endpoint(
         phishvision_result=request.phishvision_result,
         event_id=request.event_id,
     )
+
+    return serialize_assessment(result)
+
+
+@app.post(
+    "/v1/assess/image",
+    response_model=UnifiedAssessmentResponse,
+)
+async def assess_image_endpoint(
+    request: Request,
+    event_id: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=128,
+    ),
+    url: str | None = Query(
+        default=None,
+        max_length=2048,
+    ),
+) -> dict[str, Any]:
+    """Assess a screenshot using the isolated PhishVision runtime."""
+
+    content_type = request.headers.get(
+        "content-type",
+        "",
+    ).split(";", 1)[0].strip().lower()
+
+    allowed_content_types = {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+    }
+
+    if content_type not in allowed_content_types:
+        raise HTTPException(
+            status_code=415,
+            detail="Content-Type must be image/jpeg, image/png, or image/webp",
+        )
+
+    image_bytes = await request.body()
+
+    if not image_bytes:
+        raise HTTPException(
+            status_code=422,
+            detail="image request body must not be empty",
+        )
+
+    if len(image_bytes) > settings.max_image_request_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail="image exceeds the configured size limit",
+        )
+
+    try:
+        provider = get_phishvision_provider()
+
+        provider_result = await run_in_threadpool(
+            provider.assess,
+            {
+                "image_bytes": image_bytes,
+                "url": url,
+            },
+        )
+
+    except WorkerResponseError as exc:
+        if exc.error_type == "payload_too_large":
+            raise HTTPException(
+                status_code=413,
+                detail="image exceeds the configured size limit",
+            ) from exc
+
+        if exc.error_type == "invalid_request":
+            raise HTTPException(
+                status_code=422,
+                detail="uploaded image could not be processed",
+            ) from exc
+
+        result = run_assessment(
+            event_id=event_id,
+            phishvision_error=exc,
+        )
+
+    except Exception as exc:
+        result = run_assessment(
+            event_id=event_id,
+            phishvision_error=exc,
+        )
+
+    else:
+        result = run_assessment(
+            event_id=event_id,
+            phishvision_signals=provider_result.signals,
+        )
 
     return serialize_assessment(result)

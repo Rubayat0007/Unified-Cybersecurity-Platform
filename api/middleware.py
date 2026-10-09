@@ -1,15 +1,33 @@
+
+from collections.abc import Mapping
+
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
 class RequestBodyTooLarge(Exception):
-    pass
+    """Raised when a request body exceeds its path-specific limit."""
 
 
 class MaxRequestBodySizeMiddleware:
-    def __init__(self, app: ASGIApp, max_body_size: int):
+    def __init__(
+        self,
+        app: ASGIApp,
+        max_body_size: int,
+        path_limits: Mapping[str, int] | None = None,
+    ):
+        if max_body_size <= 0:
+            raise ValueError("max_body_size must be greater than zero")
+
         self.app = app
         self.max_body_size = max_body_size
+        self.path_limits = dict(path_limits or {})
+
+        for path, limit in self.path_limits.items():
+            if not path.startswith("/"):
+                raise ValueError("path limit keys must be absolute paths")
+            if limit <= 0:
+                raise ValueError("path-specific limits must be positive")
 
     async def __call__(
         self,
@@ -20,6 +38,12 @@ class MaxRequestBodySizeMiddleware:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
+
+        request_path = scope.get("path", "")
+        body_limit = self.path_limits.get(
+            request_path,
+            self.max_body_size,
+        )
 
         headers = dict(scope.get("headers", []))
         content_length = headers.get(b"content-length")
@@ -35,13 +59,19 @@ class MaxRequestBodySizeMiddleware:
                 await response(scope, receive, send)
                 return
 
-            if declared_length > self.max_body_size:
+            if declared_length < 0:
+                response = JSONResponse(
+                    status_code=400,
+                    content={"detail": "invalid Content-Length header"},
+                )
+                await response(scope, receive, send)
+                return
+
+            if declared_length > body_limit:
                 response = JSONResponse(
                     status_code=413,
                     content={
-                        "detail": (
-                            "request body exceeds the configured size limit"
-                        )
+                        "detail": "request body exceeds the configured size limit"
                     },
                 )
                 await response(scope, receive, send)
@@ -55,10 +85,9 @@ class MaxRequestBodySizeMiddleware:
             message = await receive()
 
             if message["type"] == "http.request":
-                body = message.get("body", b"")
-                received_bytes += len(body)
+                received_bytes += len(message.get("body", b""))
 
-                if received_bytes > self.max_body_size:
+                if received_bytes > body_limit:
                     raise RequestBodyTooLarge
 
             return message
@@ -69,9 +98,7 @@ class MaxRequestBodySizeMiddleware:
             response = JSONResponse(
                 status_code=413,
                 content={
-                    "detail": (
-                        "request body exceeds the configured size limit"
-                    )
+                    "detail": "request body exceeds the configured size limit"
                 },
             )
             await response(scope, receive, send)

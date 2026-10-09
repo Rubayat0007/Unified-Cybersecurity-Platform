@@ -142,6 +142,54 @@ class TestPhishVisionAdapter(unittest.TestCase):
         )
         self.assertIsNone(url_signal.normalized_score)
 
+
+    def test_low_risk_without_findings_gets_fallback_severity(self):
+        result = self._result()
+        result["security_assessment"]["evidence"] = []
+
+        result["text_analysis"].update(
+            matches=[],
+            score=0.0,
+            is_suspicious=False,
+        )
+        result["url_analysis"].update(
+            indicators=[],
+            matched_keywords=[],
+            score=0.0,
+            is_suspicious=False,
+        )
+        result["cnn_analysis"].update(
+            prediction="legitimate",
+            phishing_probability=0.1847,
+            legitimate_probability=0.8153,
+        )
+        result["risk"].update(
+            overall_score=7.39,
+            risk_level="LOW",
+        )
+
+        signals = adapt_result(result)
+
+        self.assertEqual(
+            tuple(signal.severity for signal in signals),
+            (Severity.LOW, Severity.LOW, Severity.LOW),
+        )
+
+    def test_suspicious_classifications_fallback_without_findings(self):
+        result = self._result()
+        result["security_assessment"]["evidence"] = []
+
+        signals = adapt_result(result)
+
+        self.assertEqual(
+            tuple(signal.severity for signal in signals),
+            (
+                Severity.MEDIUM,
+                Severity.MEDIUM,
+                Severity.MEDIUM,
+            ),
+        )
+
     def test_unavailable_cnn_is_not_treated_as_benign(self):
         result = self._result()
         result["cnn_analysis"] = {

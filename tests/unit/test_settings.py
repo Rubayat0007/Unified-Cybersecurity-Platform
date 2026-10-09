@@ -33,6 +33,10 @@ class TestSettings(unittest.TestCase):
             settings.max_request_bytes,
             1_048_576,
         )
+        self.assertEqual(
+            settings.max_image_request_bytes,
+            10_485_760,
+        )
         self.assertTrue(settings.ai_nids_enabled)
         self.assertTrue(settings.phishvision_enabled)
 
@@ -76,6 +80,17 @@ class TestSettings(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             load_settings()
+
+
+    def test_image_request_limit_can_be_configured(self):
+        os.environ["UCP_MAX_IMAGE_REQUEST_BYTES"] = "20971520"
+
+        settings = load_settings()
+
+        self.assertEqual(
+            settings.max_image_request_bytes,
+            20_971_520,
+        )
 
 
 if __name__ == "__main__":

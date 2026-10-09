@@ -14,6 +14,14 @@ PROTOCOL_VERSION = 1
 class WorkerRequestError(ValueError):
     """Raised when a worker request violates the protocol."""
 
+    def __init__(
+        self,
+        message: str,
+        error_type: str = "invalid_request",
+    ) -> None:
+        super().__init__(message)
+        self.error_type = error_type
+
 
 def emit(message: dict[str, Any]) -> None:
     sys.stdout.write(
@@ -59,13 +67,37 @@ def _load_runtime():
 
         analyzer = PhishVisionAnalyzer()
 
+    configured_limit = os.environ.get(
+        "UCP_MAX_IMAGE_REQUEST_BYTES"
+    )
+
+    if configured_limit is None:
+        effective_upload_limit = MAX_UPLOAD_SIZE_BYTES
+    else:
+        try:
+            requested_limit = int(configured_limit)
+        except ValueError as exc:
+            raise WorkerRequestError(
+                "configured image request limit is invalid"
+            ) from exc
+
+        if requested_limit <= 0:
+            raise WorkerRequestError(
+                "configured image request limit must be positive"
+            )
+
+        effective_upload_limit = min(
+            MAX_UPLOAD_SIZE_BYTES,
+            requested_limit,
+        )
+
     return (
         Image,
         analyzer,
         MAX_IMAGE_HEIGHT,
         MAX_IMAGE_PIXELS,
         MAX_IMAGE_WIDTH,
-        MAX_UPLOAD_SIZE_BYTES,
+        effective_upload_limit,
         MAX_URL_LENGTH,
     )
 
@@ -101,7 +133,8 @@ def _decode_request(
 
     if len(encoded_image) > max_encoded_length:
         raise WorkerRequestError(
-            "encoded image exceeds the configured size limit"
+            "image exceeds the configured size limit",
+            error_type="payload_too_large",
         )
 
     try:
@@ -121,7 +154,8 @@ def _decode_request(
 
     if len(image_bytes) > max_upload_size_bytes:
         raise WorkerRequestError(
-            "decoded image exceeds the configured size limit"
+            "image exceeds the configured size limit",
+            error_type="payload_too_large",
         )
 
     url = request.get("url")
@@ -258,7 +292,7 @@ def main() -> int:
                 {
                     "status": "error",
                     "error": {
-                        "type": "invalid_request",
+                        "type": exc.error_type,
                         "message": str(exc),
                     },
                 }
@@ -276,9 +310,7 @@ def main() -> int:
                     "status": "error",
                     "error": {
                         "type": "provider_failure",
-                        "message": (
-                            "PhishVision analysis failed"
-                        ),
+                        "message": "PhishVision analysis failed",
                     },
                 }
             )

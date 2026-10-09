@@ -102,6 +102,34 @@ def _max_finding_severity(
     return best
 
 
+def _fallback_suspicion_severity(
+    value: Any,
+) -> Severity | None:
+    """Map the analyzer's categorical suspicion flag conservatively."""
+    if not isinstance(value, bool):
+        return None
+
+    return Severity.MEDIUM if value else Severity.LOW
+
+
+def _fallback_prediction_severity(
+    value: Any,
+) -> Severity | None:
+    """Map the CNN's existing prediction when no CNN finding exists."""
+    if not isinstance(value, str):
+        return None
+
+    prediction = value.strip().lower()
+
+    if prediction == "phishing":
+        return Severity.MEDIUM
+
+    if prediction == "legitimate":
+        return Severity.LOW
+
+    return None
+
+
 def _build_evidence(
     findings: Any,
     source_name: str,
@@ -210,6 +238,18 @@ def adapt_result(
     else:
         text_score = None
 
+
+    text_severity = _max_finding_severity(findings, "OCR")
+
+    if (
+        text_severity is None
+        and text_status is SignalStatus.AVAILABLE
+    ):
+        text_severity = _fallback_suspicion_severity(
+            text_result.get("is_suspicious")
+        )
+
+
     text_signal = SecuritySignal(
         source=SignalSource.PHISHVISION,
         signal_type=SignalType.TEXT_THREAT,
@@ -218,7 +258,7 @@ def adapt_result(
         raw_score_semantics="heuristic_text_score",
         normalized_score=text_score,
         confidence=None,
-        severity=_max_finding_severity(findings, "OCR"),
+        severity=text_severity,
         evidence=_build_evidence(findings, "OCR"),
         metadata={
             **common_metadata,
@@ -258,6 +298,16 @@ def adapt_result(
         else:
             url_score = None
 
+        url_severity = _max_finding_severity(findings, "URL")
+
+        if (
+            url_severity is None
+            and url_status is SignalStatus.AVAILABLE
+        ):
+            url_severity = _fallback_suspicion_severity(
+                url_result.get("is_suspicious")
+            )
+
         url_signal = SecuritySignal(
             source=SignalSource.PHISHVISION,
             signal_type=SignalType.URL_THREAT,
@@ -266,7 +316,7 @@ def adapt_result(
             raw_score_semantics="heuristic_url_score",
             normalized_score=url_score,
             confidence=None,
-            severity=_max_finding_severity(findings, "URL"),
+            severity=url_severity,
             evidence=_build_evidence(findings, "URL"),
             metadata={
                 **common_metadata,
@@ -303,6 +353,16 @@ def adapt_result(
         phishing_probability = None
         normalized_cnn_score = None
 
+    cnn_severity = _max_finding_severity(findings, "CNN")
+
+    if (
+        cnn_severity is None
+        and cnn_status is SignalStatus.AVAILABLE
+    ):
+        cnn_severity = _fallback_prediction_severity(
+            cnn_result.get("prediction")
+        )
+
     cnn_signal = SecuritySignal(
         source=SignalSource.PHISHVISION,
         signal_type=SignalType.VISUAL_THREAT,
@@ -311,7 +371,7 @@ def adapt_result(
         raw_score_semantics="phishing_probability",
         normalized_score=normalized_cnn_score,
         confidence=None,
-        severity=_max_finding_severity(findings, "CNN"),
+        severity=cnn_severity,
         evidence=_build_evidence(findings, "CNN"),
         metadata={
             **common_metadata,

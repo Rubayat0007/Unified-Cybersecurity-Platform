@@ -45,6 +45,14 @@ class WorkerProtocolError(WorkerClientError):
 class WorkerResponseError(WorkerClientError):
     """Raised when a worker returns an application-level error."""
 
+    def __init__(
+        self,
+        message: str,
+        error_type: str = "provider_failure",
+    ) -> None:
+        super().__init__(message)
+        self.error_type = error_type
+
 
 class WorkerClient:
     """
@@ -294,10 +302,23 @@ class WorkerClient:
                         "message",
                         "worker returned an error",
                     )
+                    raw_error_type = error.get(
+                        "type",
+                        "provider_failure",
+                    )
+                    error_type = (
+                        raw_error_type
+                        if isinstance(raw_error_type, str)
+                        else "provider_failure"
+                    )
                 else:
                     message = "worker returned an error"
+                    error_type = "provider_failure"
 
-                raise WorkerResponseError(str(message))
+                raise WorkerResponseError(
+                    str(message),
+                    error_type=error_type,
+                )
 
             if response.get("status") != "ok":
                 self._terminate_process()

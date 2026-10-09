@@ -178,6 +178,46 @@ class TestCorrelationEngine(unittest.TestCase):
             RecommendedAction.WARN,
         )
 
+    def test_low_risk_phishvision_without_findings_is_not_unknown(self):
+        result = {
+            "text_analysis": {
+                "matches": [],
+                "score": 0.0,
+                "is_suspicious": False,
+            },
+            "url_analysis": {
+                "hostname": "example.com",
+                "indicators": [],
+                "matched_keywords": [],
+                "score": 0.0,
+                "is_suspicious": False,
+            },
+            "cnn_analysis": {
+                "prediction": "legitimate",
+                "phishing_probability": 0.1847,
+                "legitimate_probability": 0.8153,
+                "threshold": 0.35,
+                "model_loaded": True,
+            },
+            "risk": {
+                "overall_score": 7.39,
+                "risk_level": "LOW",
+            },
+            "security_assessment": {
+                "evidence": [],
+            },
+        }
+
+        assessment = correlate(adapt_phishvision(result))
+
+        self.assertEqual(assessment.overall_severity, Severity.LOW)
+        self.assertEqual(
+            assessment.recommended_action,
+            RecommendedAction.MONITOR,
+        )
+        self.assertEqual(assessment.threats, ())
+        self.assertIsNone(assessment.primary_threat)
+
     def test_real_adapter_outputs_can_be_correlated(self):
         nids_result = {
             "prediction": 1,

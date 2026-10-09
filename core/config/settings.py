@@ -26,6 +26,7 @@ class Settings:
     log_level: str
     request_timeout_seconds: int
     max_request_bytes: int
+    max_image_request_bytes: int
     provider_timeout_seconds: int
     provider_max_output_bytes: int
     ai_nids_enabled: bool
@@ -83,6 +84,10 @@ def load_settings() -> Settings:
         max_request_bytes=_positive_int(
             "UCP_MAX_REQUEST_BYTES",
             1_048_576,
+        ),
+        max_image_request_bytes=_positive_int(
+            "UCP_MAX_IMAGE_REQUEST_BYTES",
+            10_485_760,
         ),
         provider_timeout_seconds=_positive_int(
             "UCP_PROVIDER_TIMEOUT_SECONDS",

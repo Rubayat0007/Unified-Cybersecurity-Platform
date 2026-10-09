@@ -1,11 +1,12 @@
-from uuid import uuid4
 
-from core.audit.model import AssessmentAudit
+from uuid import uuid4
 from dataclasses import dataclass
+from collections.abc import Sequence
 from typing import Any, Mapping
 
 from adapters.ai_nids.adapter import adapt_result as adapt_ai_nids
 from adapters.phishvision.adapter import adapt_result as adapt_phishvision
+from core.audit.model import AssessmentAudit
 from core.correlation.engine import correlate
 from core.decision.assessment import SecurityAssessment
 from core.decision.engine import OperationalDecision, decide
@@ -55,12 +56,54 @@ def _error_signal(
     )
 
 
+def _provider_failure_signals(
+    exc: Exception,
+) -> tuple[SecuritySignal, ...]:
+    signal_types = (
+        SignalType.TEXT_THREAT,
+        SignalType.URL_THREAT,
+        SignalType.VISUAL_THREAT,
+    )
+
+    return tuple(
+        SecuritySignal(
+            source=SignalSource.PHISHVISION,
+            signal_type=signal_type,
+            status=SignalStatus.ERROR,
+            severity=Severity.UNKNOWN,
+            metadata={
+                "error_type": type(exc).__name__,
+                "reason": "provider execution failed",
+            },
+        )
+        for signal_type in signal_types
+    )
+
+
 def assess(
     ai_nids_result: Mapping[str, Any] | None = None,
     phishvision_result: Mapping[str, Any] | None = None,
     event_id: str | None = None,
+    phishvision_signals: Sequence[SecuritySignal] | None = None,
+    phishvision_error: Exception | None = None,
 ) -> UnifiedAssessment:
-    """Orchestrate source adapters, correlation, and operational decision."""
+    """
+    Orchestrate source results or normalized provider signals,
+    correlation, operational decision, and audit creation.
+
+    The legacy phishvision_result argument remains supported.
+    Runtime provider signals and provider errors use separate arguments.
+    """
+    phishvision_modes = (
+        phishvision_result is not None,
+        phishvision_signals is not None,
+        phishvision_error is not None,
+    )
+
+    if sum(phishvision_modes) > 1:
+        raise ValueError(
+            "Provide only one PhishVision input mode"
+        )
 
     signals: list[SecuritySignal] = []
 
@@ -83,7 +126,33 @@ def assess(
                 )
             )
 
-    if phishvision_result is None:
+    if phishvision_signals is not None:
+        normalized_signals = tuple(phishvision_signals)
+
+        if any(
+            not isinstance(signal, SecuritySignal)
+            for signal in normalized_signals
+        ):
+            raise TypeError(
+                "phishvision_signals must contain SecuritySignal objects"
+            )
+
+        if any(
+            signal.source is not SignalSource.PHISHVISION
+            for signal in normalized_signals
+        ):
+            raise ValueError(
+                "phishvision_signals must contain only PhishVision signals"
+            )
+
+        signals.extend(normalized_signals)
+
+    elif phishvision_error is not None:
+        signals.extend(
+            _provider_failure_signals(phishvision_error)
+        )
+
+    elif phishvision_result is None:
         signals.extend(
             (
                 _unavailable_signal(
@@ -100,9 +169,12 @@ def assess(
                 ),
             )
         )
+
     else:
         try:
-            signals.extend(adapt_phishvision(phishvision_result))
+            signals.extend(
+                adapt_phishvision(phishvision_result)
+            )
         except (KeyError, TypeError, ValueError) as exc:
             signals.append(
                 _error_signal(
