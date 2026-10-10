@@ -1,0 +1,89 @@
+{
+  "class_counts": {
+    "0": 41,
+    "1": 44
+  },
+  "generated_at_utc": "2026-10-10T10:28:14.037835+00:00",
+  "input_file_name": "v2_test_probs_035.csv",
+  "input_file_sha256": "de5b95cdc79fe78ec7586542612a93f394335bf6e643edf5835330ff762e4991",
+  "input_row_count": 85,
+  "label_columns": {
+    "actual": "true_label",
+    "predicted": "predicted_label"
+  },
+  "metrics": {
+    "accuracy": 0.6470588235294118,
+    "balanced_accuracy": 0.6383037694013304,
+    "class_counts": {
+      "0": 41,
+      "1": 44
+    },
+    "confusion_matrix": [
+      [
+        16,
+        25
+      ],
+      [
+        5,
+        39
+      ]
+    ],
+    "counts": {
+      "fn": 5,
+      "fp": 25,
+      "tn": 16,
+      "tp": 39
+    },
+    "f1": 0.7222222222222223,
+    "macro_avg": {
+      "f1": 0.6191756272401434,
+      "precision": 0.6856398809523809,
+      "recall": 0.6383037694013304,
+      "support": 85
+    },
+    "per_class": {
+      "0": {
+        "f1": 0.5161290322580646,
+        "precision": 0.7619047619047619,
+        "recall": 0.3902439024390244,
+        "support": 41
+      },
+      "1": {
+        "f1": 0.7222222222222223,
+        "precision": 0.609375,
+        "recall": 0.8863636363636364,
+        "support": 44
+      }
+    },
+    "positive_class": 1,
+    "precision": 0.609375,
+    "recall": 0.8863636363636364,
+    "roc_auc": 0.6945676274944567,
+    "sample_count": 85,
+    "specificity": 0.3902439024390244,
+    "weighted_avg": {
+      "f1": 0.6228125658865697,
+      "precision": 0.6829481792717087,
+      "recall": 0.6470588235294118,
+      "support": 85
+    }
+  },
+  "positive_class": {
+    "name": "phishing",
+    "value": 1
+  },
+  "prediction_source": "score_threshold",
+  "python_version": "3.11.6",
+  "roc_auc_note": "Calculated from the supplied score column; higher scores indicate class 1.",
+  "run_label": "PhishVision v2 saved test predictions at threshold 0.35",
+  "schema_version": 1,
+  "score_column": "p_phish",
+  "stored_prediction_agreement": {
+    "agreement_count": 85,
+    "agreement_rate": 1.0,
+    "compared_with": "score_threshold",
+    "mismatch_count": 0,
+    "stored_prediction_column": "predicted_label"
+  },
+  "threshold": 0.35
+}

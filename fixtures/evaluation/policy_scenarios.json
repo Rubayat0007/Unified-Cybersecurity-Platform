@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "description": "Synthetic contract scenarios for the unified platform's existing rules-based correlation and operational decision layers. These are policy checks, not real detector evaluation data.",
+  "scenarios": [
+    {
+      "id": "nids-high-phishvision-unavailable",
+      "name": "High AI-NIDS signal remains actionable when PhishVision is unavailable",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "available", "severity": "high"},
+        {"source": "phishvision", "signal_type": "visual_threat", "status": "unavailable", "severity": "unknown"}
+      ],
+      "expected": {"overall_severity": "high", "action": "investigate", "primary_threat": "network_intrusion", "requires_human_review": true, "cross_source_corroboration": false, "available_signal_count": 1}
+    },
+    {
+      "id": "cross-source-corroboration",
+      "name": "Threat-severity signals from both sources are corroborated",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "available", "severity": "high"},
+        {"source": "phishvision", "signal_type": "visual_threat", "status": "available", "severity": "medium"}
+      ],
+      "expected": {"overall_severity": "high", "action": "investigate", "primary_threat": "network_intrusion", "requires_human_review": true, "cross_source_corroboration": true, "available_signal_count": 2}
+    },
+    {
+      "id": "severity-priority-over-lower-signal",
+      "name": "Medium PhishVision severity drives action while low AI-NIDS evidence does not corroborate threat",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "available", "severity": "low"},
+        {"source": "phishvision", "signal_type": "phishing", "status": "available", "severity": "medium"}
+      ],
+      "expected": {"overall_severity": "medium", "action": "warn", "primary_threat": "phishing", "requires_human_review": false, "cross_source_corroboration": false, "available_signal_count": 2}
+    },
+    {
+      "id": "both-sources-low",
+      "name": "Low signals remain monitor-only and are not threats for corroboration",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "available", "severity": "low"},
+        {"source": "phishvision", "signal_type": "visual_threat", "status": "available", "severity": "low"}
+      ],
+      "expected": {"overall_severity": "low", "action": "monitor", "primary_threat": null, "requires_human_review": false, "cross_source_corroboration": false, "available_signal_count": 2, "threats": []}
+    },
+    {
+      "id": "minimal-signal-allows",
+      "name": "Minimal available signal maps to allow under the current contract",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "unavailable", "severity": "unknown"},
+        {"source": "phishvision", "signal_type": "visual_threat", "status": "available", "severity": "minimal"}
+      ],
+      "expected": {"overall_severity": "minimal", "action": "allow", "primary_threat": null, "requires_human_review": false, "cross_source_corroboration": false, "available_signal_count": 1, "threats": []}
+    },
+    {
+      "id": "no-usable-signals-fail-safe",
+      "name": "Unavailable and errored signals are excluded; unknown assessment requires review",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "unavailable", "severity": "critical"},
+        {"source": "phishvision", "signal_type": "visual_threat", "status": "error", "severity": "critical"}
+      ],
+      "expected": {"overall_severity": "unknown", "action": "investigate", "primary_threat": null, "requires_human_review": true, "cross_source_corroboration": false, "available_signal_count": 0, "threats": []}
+    },
+    {
+      "id": "multiple-phishvision-components-one-source",
+      "name": "Several PhishVision component signals do not alone count as cross-source corroboration",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "unavailable", "severity": "unknown"},
+        {"source": "phishvision", "signal_type": "text_threat", "status": "available", "severity": "suspicious"},
+        {"source": "phishvision", "signal_type": "url_threat", "status": "available", "severity": "medium"},
+        {"source": "phishvision", "signal_type": "visual_threat", "status": "available", "severity": "low"}
+      ],
+      "expected": {"overall_severity": "medium", "action": "warn", "primary_threat": "url_threat", "requires_human_review": false, "cross_source_corroboration": false, "available_signal_count": 3, "threats": ["text_threat", "url_threat"]}
+    },
+    {
+      "id": "critical-overrides-medium",
+      "name": "Critical severity takes precedence over medium severity",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "available", "severity": "medium"},
+        {"source": "phishvision", "signal_type": "phishing", "status": "available", "severity": "critical"}
+      ],
+      "expected": {"overall_severity": "critical", "action": "investigate", "primary_threat": "phishing", "requires_human_review": true, "cross_source_corroboration": true, "available_signal_count": 2}
+    }
+  ]
+}

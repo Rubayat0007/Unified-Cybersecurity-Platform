@@ -1,0 +1,82 @@
+{
+  "class_counts": {
+    "0": 1000,
+    "1": 1000
+  },
+  "generated_at_utc": "2026-10-10T11:55:01.713943+00:00",
+  "input_file_name": "evaluation_predictions.csv",
+  "input_file_sha256": "a2e8ca8f71348bb9561d20bcee63fbea2d69aac56a0869b0600cea151c226237",
+  "input_row_count": 2000,
+  "label_columns": {
+    "actual": "actual",
+    "predicted": "predicted"
+  },
+  "metrics": {
+    "accuracy": 0.9795,
+    "balanced_accuracy": 0.9795,
+    "class_counts": {
+      "0": 1000,
+      "1": 1000
+    },
+    "confusion_matrix": [
+      [
+        976,
+        24
+      ],
+      [
+        17,
+        983
+      ]
+    ],
+    "counts": {
+      "fn": 17,
+      "fp": 24,
+      "tn": 976,
+      "tp": 983
+    },
+    "f1": 0.979571499750872,
+    "macro_avg": {
+      "f1": 0.9794997488719237,
+      "precision": 0.9795234966513359,
+      "recall": 0.9795,
+      "support": 2000
+    },
+    "per_class": {
+      "0": {
+        "f1": 0.9794279979929754,
+        "precision": 0.9828801611278952,
+        "recall": 0.976,
+        "support": 1000
+      },
+      "1": {
+        "f1": 0.979571499750872,
+        "precision": 0.9761668321747765,
+        "recall": 0.983,
+        "support": 1000
+      }
+    },
+    "positive_class": 1,
+    "precision": 0.9761668321747765,
+    "recall": 0.983,
+    "sample_count": 2000,
+    "specificity": 0.976,
+    "weighted_avg": {
+      "f1": 0.9794997488719237,
+      "precision": 0.9795234966513358,
+      "recall": 0.9795,
+      "support": 2000
+    }
+  },
+  "positive_class": {
+    "name": "attack",
+    "value": 1
+  },
+  "prediction_source": "stored_prediction_column",
+  "python_version": "3.11.6",
+  "roc_auc_note": null,
+  "run_label": "AI-NIDS archived 2000-row hard-label predictions; not primary held-out evaluation",
+  "schema_version": 1,
+  "score_column": null,
+  "stored_prediction_agreement": null,
+  "threshold": null
+}

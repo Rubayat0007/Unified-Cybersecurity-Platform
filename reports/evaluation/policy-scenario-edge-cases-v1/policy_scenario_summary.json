@@ -1,0 +1,122 @@
+{
+  "evaluation_type": "rules_policy_contract_scenarios",
+  "failed_count": 0,
+  "generated_at_utc": "2026-10-10T11:10:52.128338+00:00",
+  "input_file_name": "policy_scenarios_edge_cases.json",
+  "input_file_sha256": "c73fc95f47b53f43a52688ac8b88afde97e68b9c0dc89111eed0b3f496c068b6",
+  "interpretation": "Pass rate measures agreement with declared policy-contract outcomes; it is not real-world detection accuracy or evidence of fusion efficacy.",
+  "pass_rate": 1.0,
+  "passed_count": 4,
+  "results": [
+    {
+      "actual": {
+        "action": "monitor",
+        "available_signal_count": 1,
+        "cross_source_corroboration": false,
+        "overall_severity": "low",
+        "primary_threat": null,
+        "requires_human_review": false,
+        "threats": []
+      },
+      "error": null,
+      "expected": {
+        "action": "monitor",
+        "available_signal_count": 1,
+        "cross_source_corroboration": false,
+        "overall_severity": "low",
+        "primary_threat": null,
+        "requires_human_review": false,
+        "threats": []
+      },
+      "id": "timeout-signal-excluded-from-severity",
+      "mismatches": {},
+      "name": "Timed-out critical source does not override an available low signal",
+      "passed": true
+    },
+    {
+      "actual": {
+        "action": "warn",
+        "available_signal_count": 1,
+        "cross_source_corroboration": false,
+        "overall_severity": "medium",
+        "primary_threat": "phishing",
+        "requires_human_review": false,
+        "threats": [
+          "phishing"
+        ]
+      },
+      "error": null,
+      "expected": {
+        "action": "warn",
+        "available_signal_count": 1,
+        "cross_source_corroboration": false,
+        "overall_severity": "medium",
+        "primary_threat": "phishing",
+        "requires_human_review": false,
+        "threats": [
+          "phishing"
+        ]
+      },
+      "id": "not-applicable-signal-excluded-from-corroboration",
+      "mismatches": {},
+      "name": "Not-applicable high AI-NIDS signal does not corroborate available PhishVision evidence",
+      "passed": true
+    },
+    {
+      "actual": {
+        "action": "warn",
+        "available_signal_count": 1,
+        "cross_source_corroboration": false,
+        "overall_severity": "suspicious",
+        "primary_threat": "phishing",
+        "requires_human_review": false,
+        "threats": [
+          "phishing"
+        ]
+      },
+      "error": null,
+      "expected": {
+        "action": "warn",
+        "available_signal_count": 1,
+        "cross_source_corroboration": false,
+        "overall_severity": "suspicious",
+        "primary_threat": "phishing",
+        "requires_human_review": false,
+        "threats": [
+          "phishing"
+        ]
+      },
+      "id": "suspicious-standalone-warns",
+      "mismatches": {},
+      "name": "Standalone suspicious severity maps to warn",
+      "passed": true
+    },
+    {
+      "actual": {
+        "action": "investigate",
+        "available_signal_count": 0,
+        "cross_source_corroboration": false,
+        "overall_severity": "unknown",
+        "primary_threat": null,
+        "requires_human_review": true,
+        "threats": []
+      },
+      "error": null,
+      "expected": {
+        "action": "investigate",
+        "available_signal_count": 0,
+        "cross_source_corroboration": false,
+        "overall_severity": "unknown",
+        "primary_threat": null,
+        "requires_human_review": true,
+        "threats": []
+      },
+      "id": "timeout-and-not-applicable-require-review",
+      "mismatches": {},
+      "name": "No usable timeout or not-applicable signals produces unknown severity and requires review",
+      "passed": true
+    }
+  ],
+  "scenario_count": 4,
+  "schema_version": 1
+}
