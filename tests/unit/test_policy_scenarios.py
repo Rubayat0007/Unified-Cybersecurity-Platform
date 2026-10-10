@@ -96,6 +96,27 @@ class PolicyScenarioEvaluationTests(unittest.TestCase):
         self.assertFalse(result["passed"])
         self.assertIn("unsupported expected fields", result["error"])
 
+    def test_unknown_scenario_field_is_rejected(self):
+        scenario = dict(self.scenarios[0])
+        scenario["severity_typo"] = "critical"
+        result = run_scenario(scenario)
+        self.assertFalse(result["passed"])
+        self.assertIn("unsupported fields", result["error"])
+
+    def test_unknown_signal_field_is_rejected(self):
+        scenario = json.loads(json.dumps(self.scenarios[0]))
+        scenario["signals"][0]["severity_typo"] = "critical"
+        result = run_scenario(scenario)
+        self.assertFalse(result["passed"])
+        self.assertIn("unsupported signal fields", result["error"])
+
+    def test_signal_metadata_must_be_an_object(self):
+        scenario = json.loads(json.dumps(self.scenarios[0]))
+        scenario["signals"][0]["metadata"] = "not-an-object"
+        result = run_scenario(scenario)
+        self.assertFalse(result["passed"])
+        self.assertIn("metadata must be an object", result["error"])
+
 
 
 class ScenarioDocumentContractTests(unittest.TestCase):

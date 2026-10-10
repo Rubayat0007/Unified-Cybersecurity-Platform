@@ -174,6 +174,29 @@ class PairedManifestValidationTests(unittest.TestCase):
         self.assertFalse(result["valid"])
         self.assertTrue(any("schema_version must equal integer 1" in error for error in result["errors"]))
 
+    def test_integral_float_schema_version_matches_json_schema_integer_semantics(self):
+        payload = valid_manifest()
+        payload["schema_version"] = 1.0
+        result = validate_paired_manifest(payload)
+        self.assertTrue(result["valid"], result["errors"])
+
+    def test_integral_float_labels_match_json_schema_integer_semantics(self):
+        payload = valid_manifest()
+        payload["events"][0]["sources"]["ai_nids"]["true_label"] = 1.0
+        payload["events"][0]["sources"]["phishvision"]["predicted_label"] = 1.0
+        result = validate_paired_manifest(payload)
+        self.assertTrue(result["valid"], result["errors"])
+
+    def test_extremely_large_integer_score_is_rejected_without_exception(self):
+        payload = valid_manifest()
+        payload["events"][0]["sources"]["ai_nids"]["score"] = 10**400
+        result = validate_paired_manifest(payload)
+        self.assertFalse(result["valid"])
+        self.assertTrue(
+            any("score must be a number in [0, 1]" in error for error in result["errors"]),
+            result["errors"],
+        )
+
     def test_rejects_unknown_fields_at_all_schema_levels(self):
         mutations = (
             lambda p: p.update(unexpected=True),
