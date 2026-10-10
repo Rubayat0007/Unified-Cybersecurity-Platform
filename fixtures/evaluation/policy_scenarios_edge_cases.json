@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "description": "Additional synthetic policy-contract cases for timeout, not-applicable, and standalone suspicious severity. These are deterministic policy checks, not detector evaluation data.",
+  "scenarios": [
+    {
+      "id": "timeout-signal-excluded-from-severity",
+      "name": "Timed-out critical source does not override an available low signal",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "available", "severity": "low"},
+        {"source": "phishvision", "signal_type": "visual_threat", "status": "timeout", "severity": "critical"}
+      ],
+      "expected": {"overall_severity": "low", "action": "monitor", "primary_threat": null, "requires_human_review": false, "cross_source_corroboration": false, "available_signal_count": 1, "threats": []}
+    },
+    {
+      "id": "not-applicable-signal-excluded-from-corroboration",
+      "name": "Not-applicable high AI-NIDS signal does not corroborate available PhishVision evidence",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "not_applicable", "severity": "high"},
+        {"source": "phishvision", "signal_type": "phishing", "status": "available", "severity": "medium"}
+      ],
+      "expected": {"overall_severity": "medium", "action": "warn", "primary_threat": "phishing", "requires_human_review": false, "cross_source_corroboration": false, "available_signal_count": 1, "threats": ["phishing"]}
+    },
+    {
+      "id": "suspicious-standalone-warns",
+      "name": "Standalone suspicious severity maps to warn",
+      "signals": [
+        {"source": "phishvision", "signal_type": "phishing", "status": "available", "severity": "suspicious"}
+      ],
+      "expected": {"overall_severity": "suspicious", "action": "warn", "primary_threat": "phishing", "requires_human_review": false, "cross_source_corroboration": false, "available_signal_count": 1, "threats": ["phishing"]}
+    },
+    {
+      "id": "timeout-and-not-applicable-require-review",
+      "name": "No usable timeout or not-applicable signals produces unknown severity and requires review",
+      "signals": [
+        {"source": "ai_nids", "signal_type": "network_intrusion", "status": "timeout", "severity": "high"},
+        {"source": "phishvision", "signal_type": "visual_threat", "status": "not_applicable", "severity": "critical"}
+      ],
+      "expected": {"overall_severity": "unknown", "action": "investigate", "primary_threat": null, "requires_human_review": true, "cross_source_corroboration": false, "available_signal_count": 0, "threats": []}
+    }
+  ]
+}

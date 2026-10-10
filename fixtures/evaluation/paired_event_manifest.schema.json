@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/unified-cybersecurity-platform/paired-event-manifest.schema.json",
+  "title": "Paired detector event evaluation manifest",
+  "description": "A manifest for learned-fusion evaluation with two source records independently linked to the same adjudicated event. The Python validator additionally checks uniqueness and split-group isolation. Timestamp fields require an RFC3339-shaped date-time with zero UTC offset (Z or +00:00).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "purpose",
+    "fusion_target",
+    "events"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "manifest_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "purpose": {
+      "const": "paired_fusion_evaluation"
+    },
+    "fusion_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "positive_class_meaning",
+        "label_definition"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "positive_class_meaning": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "label_definition": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event_id",
+          "group_id",
+          "split",
+          "event_time_utc",
+          "pairing_basis",
+          "event_label",
+          "sources"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "group_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "Incident/campaign/session grouping key; a group must never cross splits."
+          },
+          "split": {
+            "enum": [
+              "train",
+              "validation",
+              "test"
+            ]
+          },
+          "event_time_utc": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:Z|[+]00:00)(?![\\s\\S])"
+          },
+          "pairing_basis": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "method",
+              "reference"
+            ],
+            "properties": {
+              "method": {
+                "enum": [
+                  "shared_incident_id",
+                  "shared_transaction_id",
+                  "analyst_adjudication",
+                  "verified_time_window"
+                ]
+              },
+              "reference": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          },
+          "event_label": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "security_incident",
+              "incident_type",
+              "adjudication_source"
+            ],
+            "properties": {
+              "security_incident": {
+                "type": "boolean"
+              },
+              "incident_type": {
+                "enum": [
+                  "benign",
+                  "network_intrusion",
+                  "phishing",
+                  "multi_stage",
+                  "other"
+                ]
+              },
+              "adjudication_source": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          },
+          "sources": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ai_nids",
+              "phishvision"
+            ],
+            "properties": {
+              "ai_nids": {
+                "$ref": "#/$defs/sourceRecord"
+              },
+              "phishvision": {
+                "$ref": "#/$defs/sourceRecord"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sourceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "input_sha256",
+        "model_sha256",
+        "true_label",
+        "predicted_label",
+        "score",
+        "score_semantics"
+      ],
+      "properties": {
+        "record_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "input_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "model_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{64}$",
+          "minLength": 64,
+          "maxLength": 64
+        },
+        "true_label": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "predicted_label": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "score_semantics": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "decision_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "prediction_timestamp_utc": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](?:\\.[0-9]+)?(?:Z|[+]00:00)(?![\\s\\S])"
+        }
+      }
+    }
+  }
+}

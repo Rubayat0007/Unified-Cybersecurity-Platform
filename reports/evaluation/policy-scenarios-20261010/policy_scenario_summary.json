@@ -1,0 +1,226 @@
+{
+  "evaluation_type": "rules_policy_contract_scenarios",
+  "failed_count": 0,
+  "generated_at_utc": "2026-10-10T11:04:18.075945+00:00",
+  "input_file_name": "policy_scenarios.json",
+  "input_file_sha256": "d8c3e50514f9d5a5b8750ff805732bbcf6a227fda0cf5fa5563d52e9112ed9e1",
+  "interpretation": "Pass rate measures agreement with declared policy-contract outcomes; it is not real-world detection accuracy or evidence of fusion efficacy.",
+  "pass_rate": 1.0,
+  "passed_count": 8,
+  "results": [
+    {
+      "actual": {
+        "action": "investigate",
+        "available_signal_count": 1,
+        "cross_source_corroboration": false,
+        "overall_severity": "high",
+        "primary_threat": "network_intrusion",
+        "requires_human_review": true,
+        "threats": [
+          "network_intrusion"
+        ]
+      },
+      "error": null,
+      "expected": {
+        "action": "investigate",
+        "available_signal_count": 1,
+        "cross_source_corroboration": false,
+        "overall_severity": "high",
+        "primary_threat": "network_intrusion",
+        "requires_human_review": true
+      },
+      "id": "nids-high-phishvision-unavailable",
+      "mismatches": {},
+      "name": "High AI-NIDS signal remains actionable when PhishVision is unavailable",
+      "passed": true
+    },
+    {
+      "actual": {
+        "action": "investigate",
+        "available_signal_count": 2,
+        "cross_source_corroboration": true,
+        "overall_severity": "high",
+        "primary_threat": "network_intrusion",
+        "requires_human_review": true,
+        "threats": [
+          "network_intrusion",
+          "visual_threat"
+        ]
+      },
+      "error": null,
+      "expected": {
+        "action": "investigate",
+        "available_signal_count": 2,
+        "cross_source_corroboration": true,
+        "overall_severity": "high",
+        "primary_threat": "network_intrusion",
+        "requires_human_review": true
+      },
+      "id": "cross-source-corroboration",
+      "mismatches": {},
+      "name": "Threat-severity signals from both sources are corroborated",
+      "passed": true
+    },
+    {
+      "actual": {
+        "action": "warn",
+        "available_signal_count": 2,
+        "cross_source_corroboration": false,
+        "overall_severity": "medium",
+        "primary_threat": "phishing",
+        "requires_human_review": false,
+        "threats": [
+          "phishing"
+        ]
+      },
+      "error": null,
+      "expected": {
+        "action": "warn",
+        "available_signal_count": 2,
+        "cross_source_corroboration": false,
+        "overall_severity": "medium",
+        "primary_threat": "phishing",
+        "requires_human_review": false
+      },
+      "id": "severity-priority-over-lower-signal",
+      "mismatches": {},
+      "name": "Medium PhishVision severity drives action while low AI-NIDS evidence does not corroborate threat",
+      "passed": true
+    },
+    {
+      "actual": {
+        "action": "monitor",
+        "available_signal_count": 2,
+        "cross_source_corroboration": false,
+        "overall_severity": "low",
+        "primary_threat": null,
+        "requires_human_review": false,
+        "threats": []
+      },
+      "error": null,
+      "expected": {
+        "action": "monitor",
+        "available_signal_count": 2,
+        "cross_source_corroboration": false,
+        "overall_severity": "low",
+        "primary_threat": null,
+        "requires_human_review": false,
+        "threats": []
+      },
+      "id": "both-sources-low",
+      "mismatches": {},
+      "name": "Low signals remain monitor-only and are not threats for corroboration",
+      "passed": true
+    },
+    {
+      "actual": {
+        "action": "allow",
+        "available_signal_count": 1,
+        "cross_source_corroboration": false,
+        "overall_severity": "minimal",
+        "primary_threat": null,
+        "requires_human_review": false,
+        "threats": []
+      },
+      "error": null,
+      "expected": {
+        "action": "allow",
+        "available_signal_count": 1,
+        "cross_source_corroboration": false,
+        "overall_severity": "minimal",
+        "primary_threat": null,
+        "requires_human_review": false,
+        "threats": []
+      },
+      "id": "minimal-signal-allows",
+      "mismatches": {},
+      "name": "Minimal available signal maps to allow under the current contract",
+      "passed": true
+    },
+    {
+      "actual": {
+        "action": "investigate",
+        "available_signal_count": 0,
+        "cross_source_corroboration": false,
+        "overall_severity": "unknown",
+        "primary_threat": null,
+        "requires_human_review": true,
+        "threats": []
+      },
+      "error": null,
+      "expected": {
+        "action": "investigate",
+        "available_signal_count": 0,
+        "cross_source_corroboration": false,
+        "overall_severity": "unknown",
+        "primary_threat": null,
+        "requires_human_review": true,
+        "threats": []
+      },
+      "id": "no-usable-signals-fail-safe",
+      "mismatches": {},
+      "name": "Unavailable and errored signals are excluded; unknown assessment requires review",
+      "passed": true
+    },
+    {
+      "actual": {
+        "action": "warn",
+        "available_signal_count": 3,
+        "cross_source_corroboration": false,
+        "overall_severity": "medium",
+        "primary_threat": "url_threat",
+        "requires_human_review": false,
+        "threats": [
+          "text_threat",
+          "url_threat"
+        ]
+      },
+      "error": null,
+      "expected": {
+        "action": "warn",
+        "available_signal_count": 3,
+        "cross_source_corroboration": false,
+        "overall_severity": "medium",
+        "primary_threat": "url_threat",
+        "requires_human_review": false,
+        "threats": [
+          "text_threat",
+          "url_threat"
+        ]
+      },
+      "id": "multiple-phishvision-components-one-source",
+      "mismatches": {},
+      "name": "Several PhishVision component signals do not alone count as cross-source corroboration",
+      "passed": true
+    },
+    {
+      "actual": {
+        "action": "investigate",
+        "available_signal_count": 2,
+        "cross_source_corroboration": true,
+        "overall_severity": "critical",
+        "primary_threat": "phishing",
+        "requires_human_review": true,
+        "threats": [
+          "network_intrusion",
+          "phishing"
+        ]
+      },
+      "error": null,
+      "expected": {
+        "action": "investigate",
+        "available_signal_count": 2,
+        "cross_source_corroboration": true,
+        "overall_severity": "critical",
+        "primary_threat": "phishing",
+        "requires_human_review": true
+      },
+      "id": "critical-overrides-medium",
+      "mismatches": {},
+      "name": "Critical severity takes precedence over medium severity",
+      "passed": true
+    }
+  ],
+  "scenario_count": 8,
+  "schema_version": 1
+}
