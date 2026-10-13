@@ -135,3 +135,89 @@ Before modifying the persistent candidate extractor or reconsidering live infere
 4. Rerun the strict parity suite after any separately reviewed candidate-side change.
 
 The original detector, frozen model, model thresholds, and live-inference gate remain unchanged. The temporary experiments do not establish detection accuracy or production readiness.
+
+## Packaged CICFlowMeter V3.0 cross-check (2026-10-14)
+
+### Setup and scope
+
+A packaged CICFlowMeter 3.0 JAR from the temporary
+`iPAS/TCPDUMP_and_CICFlowMeter` reference checkout was run against the
+same two synthetic four-packet bidirectional TCP PCAP fixtures used in
+the earlier replay experiments. The packaged reference and its JAR were
+not modified.
+
+This package is an additional comparator, not a verified reproduction
+of the exact CICFlowMeter version and configuration used to generate the
+frozen model's CICIDS2017 training features.
+
+### Packet-level verification
+
+Scapy inspection confirmed the TCP flags in both input captures:
+
+- **Short flow:** packet flags `S`, `SA`, `PA`, `PA`; expected aggregate
+  counts are SYN = 2, ACK = 3, PSH = 2.
+- **Idle-gap flow:** packet flags `S`, `SA`, `A`, `PA`; expected aggregate
+  counts are SYN = 2, ACK = 3, PSH = 1.
+
+Both captures contain four TCP packets and were successfully processed
+by the packaged V3.0 program.
+
+### Feature comparison results
+
+The canonicalized V3.0 output was compared against the earlier
+upstream-based canonical reference with the existing feature-parity
+harness.
+
+For each fixture, one matching flow was found and all 20 model features
+were compared. Exactly two features mismatched:
+
+- `syn_count`: upstream-based reference = 2; V3.0 candidate = 0.
+- `ack_count`: upstream-based reference = 3; V3.0 candidate = 0.
+
+The other 18 model features matched within the harness's default
+absolute and relative tolerances of `1e-6`. No flows were missing from
+either side of these comparisons.
+
+The V3.0 CSV also reported SYN Flag Cnt = 0, ACK Flag Cnt = 0, and
+PSH Flag Cnt = 1 for both fixtures. Those values do not agree with the
+verified packet-level aggregate counts.
+
+### Bytecode findings and limitations
+
+Inspection of the packaged V3.0 bytecode found:
+
+- `PacketReader` obtains SYN, ACK, and PSH flags from the JNetPcap TCP
+  accessors and passes the results to the corresponding
+  `BasicPacketInfo` setters in the inspected parsing paths.
+- `BasicPacketInfo` flag accessors return the stored Boolean fields.
+- `BasicFlow.firstPacket()` invokes `checkFlags()`, which increments
+  the flag counters based on the packet's flags.
+- The inspected `BasicFlow.addPacket()` implementation does not invoke
+  `checkFlags()` on the subsequent-packet path.
+- Flag serialization iterates over `flagCounts.keySet()` and appends
+  values from that map rather than explicitly selecting each counter in
+  the fixed CSV-header order.
+
+These observations are consistent with a flag-aggregation defect and
+a possible CSV header/value ordering defect. The bytecode review and
+observed outputs identify strong leads, but the precise contribution
+of each issue has not been confirmed through instrumentation and a
+corrected, rerun reference implementation. The package must not be
+assumed to provide trustworthy SYN/ACK counts.
+
+### Assessment
+
+Packaged CICFlowMeter V3.0 is suitable only as a supplementary
+synthetic cross-check for the tested cases. It is not an authoritative
+reference for `syn_count` or `ack_count`, and the 18-of-20 matches on
+these two fixtures do not establish parity with the training feature
+generator.
+
+The earlier upstream-based reference also has unverified training-data
+provenance. The results therefore do not establish full feature parity
+or production readiness.
+
+The original AI-NIDS detector, frozen model, model thresholds, and
+live-inference gate remain unchanged. Live inference must remain
+disabled pending verified feature-generator provenance and broader,
+reproducible parity testing.
