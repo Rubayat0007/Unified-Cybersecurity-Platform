@@ -77,7 +77,7 @@ Result: **18 passed in 10.00 seconds**.
 
 These tests cover provenance mappings, schema order, expected feature values for test packets, model-input validation, and inference behavior. They do not constitute an independent comparison of the live extractor against the training feature generator.
 
-A repository search found no `.pcap`, `.pcapng`, or `.cap` files in the searched AI-NIDS tree. No packet-replay parity evaluation has therefore been established from an existing repository capture.
+A repository search found no `.pcap`, `.pcapng`, or `.cap` files in the searched AI-NIDS tree. A synthetic packet-replay parity evaluation was subsequently performed against a temporary CICFlowMeter checkout; results and limitations are documented below. This does not establish parity with the exact feature-generator version used to create the CICIDS2017 training features.
 
 ## Readiness assessment
 
@@ -99,3 +99,39 @@ No live detection accuracy, production compatibility, or fusion effectiveness cl
 ## Integration boundary
 
 Any future integration work should be implemented and validated in the unified cybersecurity platform where practicable. Do not enable live inference, retrain the frozen model, alter model thresholds, or change the original detector's production behavior as part of this audit.
+
+## Synthetic packet-replay parity experiments (2026-10-14)
+
+### Setup and provenance
+
+A temporary checkout of the upstream `ahlashkari/CICFlowMeter` repository at commit `98a5ebad0df579cc8b43eedd3421b3ae87699901` was built and run against synthetic offline IPv4/TCP PCAPs. Compilation required using the checkout's bundled Windows JNetPcap JAR in place of the unavailable Maven dependency. Running the reference also required adding the existing Npcap directory to the current PowerShell session's `PATH`. These adjustments were confined to the temporary reference environment.
+
+The checkout is a candidate reference implementation. The exact CICFlowMeter version and configuration used to produce the frozen model's CICIDS2017 training features have not been established.
+
+### Experiment results
+
+Two four-packet bidirectional TCP flows were replayed through the reference and candidate implementations. Candidate results used runtime-only experimental adjustments; the original `src/features/flow.py` file was not changed.
+
+- **Short flow:** packet timestamps at 0, 1, 3, and 6 milliseconds. The initial strict comparison reported seven feature mismatches. Subtracting the earliest timestamp before converting to floating point eliminated the small discrepancies in duration, rates, and directional IAT means. Matching the reference's transport-header-only accounting eliminated the header-length mismatch. `active_time` remained different: the reference reported 0, while the candidate reported 6,000 microseconds.
+- **Idle-gap flow:** packet timestamps at 0, 1 millisecond, 6 seconds, and 6.001 seconds. With both runtime-only adjustments, all 20 features matched the reference within the harness's default absolute and relative tolerances of `1e-6`. The reference reported an active mean of 1,000 microseconds and an idle mean of 5,999,000 microseconds.
+
+### Diagnosed differences
+
+**Timestamp precision:** the candidate converts large Unix-epoch timestamps to floating-point values before subtraction. For the first synthetic flow, this produced a computed duration of approximately 6,000.04196 microseconds instead of 6,000 microseconds. Subtracting a Decimal timestamp origin before conversion eliminated the observed timing mismatches in these experiments. This was tested only as a runtime patch and has not been applied to the candidate source.
+
+**Header length:** the candidate's `_packet_header_length` includes the IP header plus the TCP/UDP header. For these TCP fixtures, the inspected reference packet reader stores the TCP header length in `headerBytes`. UDP header accounting was not exercised, and one UDP parsing branch in `PacketReader.java` appears to use the TCP header getter; that path requires separate verification. For the four-packet fixtures, the candidate's total was 160 bytes versus 80 bytes from the reference. A runtime-only transport-header adjustment made this feature match in both fixtures. Whether this is the correct definition for the exact training-data generator must still be verified.
+
+**Active/idle timing:** the reference evaluates active/idle timing as packets arrive. When a gap exceeds the activity timeout, it records the preceding active period and the idle interval, but it does not finalize the last active interval when dumping the tested current flow. Consequently, the short-flow fixture has reference active and idle means of zero, while the candidate calculates the final active interval. The idle-gap fixture records a long idle period and matches the candidate's calculated values. The short-flow discrepancy is therefore observed reference behavior, not evidence that the candidate should automatically be changed to imitate it.
+
+### Assessment and next steps
+
+These experiments isolate specific numerical and semantic differences, but do not prove equivalence with the CICIDS2017 training pipeline. The all-20-feature pass applies only to the tested idle-gap fixture and the stated runtime-only adjustments. The short-flow test still fails one feature.
+
+Before modifying the persistent candidate extractor or reconsidering live inference:
+
+1. Establish the provenance and configuration of the feature generator used for training.
+2. Expand independent replay comparisons to representative flows, including short flows, idle gaps, single-packet and incomplete flows, and both TCP and UDP.
+3. Decide the correct training-compatible definitions for timestamp handling, header length, and active/idle finalization from verified provenance and broader evidence.
+4. Rerun the strict parity suite after any separately reviewed candidate-side change.
+
+The original detector, frozen model, model thresholds, and live-inference gate remain unchanged. The temporary experiments do not establish detection accuracy or production readiness.
