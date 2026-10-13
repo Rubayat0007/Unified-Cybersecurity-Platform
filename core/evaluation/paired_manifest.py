@@ -73,14 +73,24 @@ def _reject_unknown_fields(
 
 
 def _is_binary_integer(value: Any) -> bool:
-    return type(value) is int and value in (0, 1)
+    """Match JSON Schema integer semantics without accepting booleans.
 
-
-def _is_unit_interval_number(value: Any) -> bool:
+    JSON Schema treats mathematically integral numbers such as 1.0 as integers;
+    Python's ``json.loads`` preserves those as floats, so accept 0.0/1.0 here too.
+    """
     return (
         isinstance(value, (int, float))
         and not isinstance(value, bool)
-        and 0.0 <= float(value) <= 1.0
+        and value in (0, 1)
+    )
+
+
+def _is_unit_interval_number(value: Any) -> bool:
+    """Check a JSON numeric range without coercing arbitrarily large integers."""
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and 0 <= value <= 1
     )
 
 
@@ -120,7 +130,12 @@ def validate_paired_manifest(payload: Any) -> dict[str, Any]:
         if field not in payload:
             errors.append(f"missing top-level field: {field}")
 
-    if type(payload.get("schema_version")) is not int or payload.get("schema_version") != 1:
+    version = payload.get("schema_version")
+    if (
+        not isinstance(version, (int, float))
+        or isinstance(version, bool)
+        or version != 1
+    ):
         errors.append("schema_version must equal integer 1")
     if not _is_nonempty_string(payload.get("manifest_id")):
         errors.append("manifest_id must be a non-empty string")

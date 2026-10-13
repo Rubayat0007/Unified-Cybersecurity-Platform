@@ -18,6 +18,9 @@ from core.models.enums import (
 )
 from core.models.signal import SecuritySignal
 
+_SCENARIO_FIELDS = {"id", "name", "signals", "expected"}
+_SIGNAL_FIELDS = {"source", "signal_type", "status", "severity", "metadata"}
+
 _EXPECTED_FIELDS = {
     "overall_severity",
     "action",
@@ -43,12 +46,23 @@ def _build_signal(raw: Mapping[str, Any], scenario_id: str) -> SecuritySignal:
     if not isinstance(raw, Mapping):
         raise ValueError(f"Scenario {scenario_id}: each signal must be an object")
 
+    unexpected = set(raw).difference(_SIGNAL_FIELDS)
+    if unexpected:
+        raise ValueError(
+            f"Scenario {scenario_id}: unsupported signal fields "
+            f"{sorted(str(field) for field in unexpected)}"
+        )
+
     required = {"source", "signal_type", "status"}
     missing = required.difference(raw)
     if missing:
         raise ValueError(
             f"Scenario {scenario_id}: signal missing fields {sorted(missing)}"
         )
+
+    metadata = raw.get("metadata", {})
+    if not isinstance(metadata, Mapping):
+        raise ValueError(f"Scenario {scenario_id}: signal metadata must be an object")
 
     severity_raw = raw.get("severity")
     severity = (
@@ -61,7 +75,7 @@ def _build_signal(raw: Mapping[str, Any], scenario_id: str) -> SecuritySignal:
         signal_type=_enum(SignalType, raw["signal_type"], "signal_type"),
         status=_enum(SignalStatus, raw["status"], "status"),
         severity=severity,
-        metadata=dict(raw.get("metadata", {})),
+        metadata=dict(metadata),
     )
 
 
@@ -78,6 +92,12 @@ def run_scenario(scenario: Mapping[str, Any]) -> dict[str, Any]:
     try:
         if not isinstance(scenario, Mapping):
             raise ValueError("Each scenario must be an object")
+        unexpected_scenario_fields = set(scenario).difference(_SCENARIO_FIELDS)
+        if unexpected_scenario_fields:
+            raise ValueError(
+                f"Scenario has unsupported fields "
+                f"{sorted(str(field) for field in unexpected_scenario_fields)}"
+            )
         if not isinstance(scenario_id, str) or not scenario_id.strip():
             raise ValueError("Scenario id must be a non-empty string")
         if not isinstance(name, str) or not name.strip():
