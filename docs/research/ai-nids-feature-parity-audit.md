@@ -221,3 +221,140 @@ The original AI-NIDS detector, frozen model, model thresholds, and
 live-inference gate remain unchanged. Live inference must remain
 disabled pending verified feature-generator provenance and broader,
 reproducible parity testing.
+
+## Phase 5: training-feature provenance review (2026-10-14)
+
+### Published dataset provenance
+
+The official Canadian Institute for Cybersecurity CICIDS2017 page states
+that the dataset includes flow-analysis CSVs generated using CICFlowMeter
+and more than 80 extracted network-flow features. The current page does
+not identify the precise CICFlowMeter version used for this local archive.
+
+Source: https://www.unb.ca/cic/datasets/ids-2017.html
+
+A researcher-maintained dataset listing explicitly attributes the
+CICIDS2017 flow-analysis CSVs to CICFlowmeter-V3.0. This supports V3.0
+as the published version attribution, but does not identify the exact
+source commit, binary build, runtime configuration, or timeout settings
+used to create the local archive.
+
+Source: https://www.cs.unb.ca/~alashkar/Data-sets.asp
+
+A separate historical upstream commit inspected during the audit,
+`844e3fa327f567a063108febbd59430f222f7e53` (2018-06-04), declares
+`version = '4.0'` and `description = CICFlowMeterV4` in its committed
+`build.gradle`. That commit is not evidence that V4.0 generated the
+CICIDS2017 training features and must not be treated as the exact
+training reference.
+
+### Local archive integrity
+
+The local `MachineLearningCSV.zip` was 235,102,953 bytes and contained
+the eight expected daily CSV files, with archive-entry timestamps dated
+2018-06-07.
+
+SHA-256 hashes were calculated for each CSV entry read directly from
+the ZIP archive and compared with the corresponding extracted CSV file.
+All eight extracted files matched their archive entries exactly.
+
+This confirms that the extracted files equal the local ZIP contents.
+It does not independently authenticate the origin of the ZIP archive,
+because no independently verified publisher checksum or equivalent
+chain-of-custody record was established.
+
+### Source-column mapping and duplicate header
+
+The inspected source CSV header contains two columns named
+`Fwd Header Length`. Pandas exposes the second as
+`Fwd Header Length.1`. The preparation script selects
+`Fwd Header Length` through `SOURCE_COLUMNS` and derives
+`header_length` from the selected forward-header column and
+`Bwd Header Length`.
+
+A full read-only comparison of the two forward-header columns across
+all eight CSVs covered 2,830,743 rows and found zero differing rows.
+For this local archive, the duplicate header therefore introduces no
+observed value difference in the derived forward-header input.
+
+The preparation script also derives:
+- `flow_bytes` as total forward plus total backward packet lengths.
+- `flow_packets` as total forward plus total backward packet counts.
+- `header_length` as forward plus backward header lengths.
+
+It maps directional packet-length means, rates, flag counts,
+`Average Packet Size`, `Active Mean`, `Idle Mean`, `Down/Up Ratio`,
+and forward/backward IAT means from the corresponding CSV columns.
+These mappings establish the local transformation logic, but do not
+independently establish that a live extractor will reproduce the
+historical generator's exact definitions and runtime behavior.
+
+### Processed-row reconciliation
+
+The eight raw CSVs contain 2,830,743 data rows in total. A read-only,
+chunked replay of the preparation script's numeric conversion,
+missing/non-finite-value removal, and nonnegative-value filters retained
+2,827,761 rows.
+
+The existing `data/processed/cicids2017_binary.csv` contains
+2,020,632 data rows and 21 columns (20 model features plus `label`).
+The tracked evaluation metrics also report 2,020,632 dataset rows.
+
+The checked-in preparation entry point concatenates the per-file results
+and then calls `combined.drop_duplicates()` before writing the processed
+CSV. The 807,129-row difference between the filtered row count and the
+saved processed dataset is consistent with that global deduplication
+stage. The read-only filter replay did not independently execute a full
+global duplicate-count calculation, so 807,129 is a reconciliation
+difference, not a separately measured count of duplicates removed.
+
+### Training artifact and dependency evidence
+
+The preparation script, training script, and tracked evaluation metrics
+have only the initial source commit `5d8ca4b` in their inspected Git
+history. The processed CSV and frozen model are ignored by Git; the
+metrics file is tracked. No tracked manifest or training log was found
+that binds the exact processed CSV content, training invocation, full
+dependency environment, and frozen model bytes into one reproducible
+training record.
+
+The existing frozen model and its backup have identical SHA-256 hashes:
+`1992228DFDC81529D8F87028252688AB39BC5AEB66A7AA2C5A38D164C831B3F2`.
+A read-only byte inspection of the serialized model found the
+`_sklearn_version` marker `1.9.1`, matching the scikit-learn version
+listed in both inspected dependency manifests.
+
+The initial `requirements.txt` in `5d8ca4b` specified NumPy 2.5.3,
+SciPy 1.18.1, and contourpy 1.4.0. The later dependency update
+`782e0fd` (authored 2026-09-17 01:25:09 +0800; committed
+2026-09-17 01:27:45 +0800) specifies NumPy 2.2.6, SciPy 1.15.3,
+and contourpy 1.3.3. Both manifests specify pandas 3.0.5,
+scikit-learn 1.9.1, and joblib 1.6.0.
+
+The local model's filesystem timestamp precedes the dependency-update
+commit timestamp. This is temporal context, not proof of the packages
+actually loaded during training. Filesystem timestamps and a serialized
+scikit-learn marker do not establish the complete historical environment
+or which exact input file was used in the training invocation.
+
+### Provenance assessment and safety boundary
+
+**Status: partially established; exact training feature-generator
+provenance remains unverified.**
+
+The available publisher/researcher documentation supports CICFlowMeter
+V3.0 as the published CICIDS2017 version attribution. The local archive's
+extracted contents, duplicate header values, preparation mappings,
+processed row count, saved metric row count, and frozen-model hash have
+been checked as described above.
+
+The exact generator build and configuration used for the local archive,
+as well as the exact processed-dataset bytes used in the historical
+training run, have not been independently established. The synthetic
+V3.0 comparisons remain supplementary and are not proof of full feature
+parity.
+
+Do not retrain or replace the frozen model, change model thresholds,
+modify the original detector, or enable live inference as a result of
+these findings. Live inference remains disabled pending stronger
+provenance evidence and broader reproducible parity validation.
