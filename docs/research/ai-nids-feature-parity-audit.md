@@ -358,3 +358,34 @@ Do not retrain or replace the frozen model, change model thresholds,
 modify the original detector, or enable live inference as a result of
 these findings. Live inference remains disabled pending stronger
 provenance evidence and broader reproducible parity validation.
+
+### Current-state artifact fingerprint baseline (2026-10-14)
+
+A read-only SHA-256 fingerprint baseline was captured for the local
+AI-NIDS artifacts. The original AI-NIDS repository was clean at
+revision `2d02907` (`main` aligned with `origin/main`) during the
+surrounding provenance review.
+
+| Artifact | Size (bytes) | SHA-256 |
+| --- | ---: | --- |
+| `data/raw/MachineLearningCVE/MachineLearningCSV.zip` | 235102953 | `C3F26274B36C837CCF28FFD2DBF4582941C30B3EE70A635C6E5B2F87C4727928` |
+| `data/processed/cicids2017_binary.csv` | 241981132 | `14B517C997478428C14512CC94312C23017BD6D8F96048BD168619C89B7B3737` |
+| `src/models/nids_random_forest_cicids2017.pkl` | 139873785 | `1992228DFDC81529D8F87028252688AB39BC5AEB66A7AA2C5A38D164C831B3F2` |
+| `results/cicids2017_metrics.txt` | 647 | `986A54DB381FA2F90B106ED4E04A9EA2FABE172C4B0FC1B96615EDB9424C8E80` |
+| `src/prepare_cicids2017.py` | 5265 | `F13E202EE7A20636D2E432A90E31E2FB9387D6A5B34C3F181586EDAC87BDC5DB` |
+| `src/train_cicids2017.py` | 5006 | `F1BC7418A602F9D68E3604AAA6A795E3BC0E0B15E396E8C7F25929A930DA31F4` |
+| `requirements.txt` | 356 | `69C410082A099FDD14CFD3E503B8B9008155C91CF429E5B6192A0B1644804D20` |
+
+The separately stored backup model was also verified to have the same
+size and SHA-256 hash as the active model.
+
+This table identifies the local artifact contents observed during this
+review. It does not independently authenticate the archive's publisher,
+prove that the processed CSV with this hash was used in the historical
+training invocation, or establish the exact CICFlowMeter build and
+configuration used to generate the training features.
+
+No AI-NIDS artifact was modified or retrained to create this baseline.
+The model was not deserialized; its bytes were read only for hashing and
+inspection. These hashes should be compared against future copies before
+assuming those copies represent the same artifact versions.
