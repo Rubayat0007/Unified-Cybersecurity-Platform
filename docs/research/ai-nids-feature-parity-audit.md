@@ -302,11 +302,10 @@ The tracked evaluation metrics also report 2,020,632 dataset rows.
 
 The checked-in preparation entry point concatenates the per-file results
 and then calls `combined.drop_duplicates()` before writing the processed
-CSV. The 807,129-row difference between the filtered row count and the
-saved processed dataset is consistent with that global deduplication
-stage. The read-only filter replay did not independently execute a full
-global duplicate-count calculation, so 807,129 is a reconciliation
-difference, not a separately measured count of duplicates removed.
+CSV. The exact disk-backed reconstruction documented below independently
+confirmed the global deduplication stage: 2,827,761 rows entered the
+global deduplicator and 2,020,632 unique rows remained, so 807,129 rows
+were removed as duplicates.
 
 ### Training artifact and dependency evidence
 
@@ -495,3 +494,34 @@ It does not prove the original archive's origin, the exact CICFlowMeter
 source build or configuration used to generate its CSVs, or that these
 archive bytes produced the processed dataset and frozen model preserved
 locally.
+
+### Exact processed-CSV reproduction (2026-10-16)
+
+A disk-backed validation reproduced the saved processed CSV using the
+eight local raw CSV files and the current `src.prepare_cicids2017`
+`process_file()` implementation. It processed one source CSV at a time,
+used SQLite to deduplicate across the 20 model features plus `label`,
+and exported features as `float32` and `label` as `int8`, matching the
+preparation script's final output types.
+
+The run processed 2,827,761 rows after the per-file filters and retained
+2,020,632 unique rows, removing 807,129 duplicates. The rebuilt CSV
+contained 2,020,632 rows and its SHA-256 was exactly
+`14B517C997478428C14512CC94312C23017BD6D8F96048BD168619C89B7B3737`,
+matching the existing processed CSV byte for byte.
+
+The reconstructed CSV was written to
+`D:\AI-NIDS-Provenance-Validation-20261016\cicids2017_binary_rebuilt.csv`.
+The temporary SQLite database is at
+`D:\AI-NIDS-Provenance-Validation-20261016\deduplication.sqlite`.
+Both are outside the AI-NIDS and unified-platform repositories.
+
+This establishes that the current local raw archive and current
+preparation logic can reproduce the exact saved processed CSV. It
+does not independently prove that the historical training invocation
+loaded those exact bytes, or establish the exact CICFlowMeter build
+and configuration used to generate the raw flow features.
+
+The original raw files, processed CSV, frozen model, source files,
+and metrics were not modified by this validation. The model was not
+deserialized or retrained.
