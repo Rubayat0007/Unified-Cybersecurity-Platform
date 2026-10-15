@@ -473,3 +473,25 @@ correction notice separately reports an Idle Time feature error in the
 dataset files; the available correction history does not establish that
 this was the same issue. This audit therefore does not claim that the
 local archive contains the absolute-timestamp defect.
+
+### Independent archive-hash corroboration (2026-10-16)
+
+A separate Hugging Face dataset mirror, `Mireu-Lab/CIC-IDS`, records
+the Git LFS object for `ZIP/MachineLearningCSV.zip` at commit
+`ab4a10050a2a5c3a9b36c126a409f1898a589059` (2023-09-24) with SHA-256
+OID `c3f26274b36c837ccf28ffd2dbf4582941c30b3ee70a635c6e5b2f87c4727928`
+and size `235102953` bytes.
+
+Source:
+https://huggingface.co/datasets/Mireu-Lab/CIC-IDS/commit/ab4a10050a2a5c3a9b36c126a409f1898a589059
+
+The locally calculated SHA-256 and file size match this mirrored LFS
+object exactly. This provides byte-level corroboration that the local
+archive is identical to that mirrored object.
+
+The mirror is not the dataset publisher. This match is not an
+independently verified publisher checksum or chain-of-custody record.
+It does not prove the original archive's origin, the exact CICFlowMeter
+source build or configuration used to generate its CSVs, or that these
+archive bytes produced the processed dataset and frozen model preserved
+locally.
