@@ -525,3 +525,32 @@ and configuration used to generate the raw flow features.
 The original raw files, processed CSV, frozen model, source files,
 and metrics were not modified by this validation. The model was not
 deserialized or retrained.
+
+## Packaged CICFlowMeter V3.0 synthetic TCP flag-count investigation (2026-10-16)
+
+### Findings
+
+Read-only bytecode inspection of the packaged `CICFlowMeter-3.0.jar` established two defects affecting its aggregate TCP flag-count columns.
+
+1. `BasicFlow.checkFlags()` increments the aggregate flag map, but the packaged V3.0 application calls this method only from `BasicFlow.firstPacket()`. `FlowGenerator` calls `BasicFlow.addPacket()` for subsequent packets, and the packaged `addPacket()` implementation does not call `checkFlags()`. The aggregate counters therefore omit flags from subsequent packets.
+
+2. `BasicFlow` initializes its flag map in the order FIN, SYN, RST, PSH, ACK, URG, CWR, ECE, but serializes values by iterating over `flagCounts.keySet()`. In the tested Java 8 runtime, the iteration order was RST, PSH, ECE, SYN, ACK, FIN, URG, CWR. This does not match the fixed CSV column order. The V3.0 header also labels the CWR feature as `CWE Flag Count`.
+
+### Synthetic fixture evidence
+
+The two four-packet PCAP fixtures have these packet-level TCP flag totals:
+
+- Synthetic fixture: SYN = 2, ACK = 3, PSH = 2.
+- Idle-gap fixture: SYN = 2, ACK = 3, PSH = 1.
+
+In each fixture, the first packet has SYN set. The saved packaged V3.0 reference CSVs both report FIN = 0, SYN = 0, RST = 0, PSH = 1, ACK = 0, URG = 0, CWE = 0, ECE = 0.
+
+The observed PSH value of 1 is explained by the first packet's sole SYN count being serialized at the PSH column position. For the idle-gap fixture, this value coincidentally equals the packet-level PSH total; it is not evidence that the V3.0 aggregate PSH counter is correct.
+
+### Interpretation and limitations
+
+The packaged V3.0 output is not a valid independent reference for the aggregate FIN/SYN/RST/PSH/ACK/URG/CWR/ECE counts on these multi-packet fixtures. The previously observed SYN and ACK parity mismatches cannot be attributed to the candidate parser on the basis of this output.
+
+A separate direct JNetPcap probe did not run because native initialization failed with `UnsatisfiedLinkError` involving `com.slytechs.library.NativeLibrary.dlopen`. Accordingly, that probe provides no evidence about the decoded flags. The findings above are based on the packaged application bytecode, the Java 8 map-order probe, the saved CSV values, and the independently inspected packet-level fixture totals.
+
+This establishes defects in the specific packaged V3.0 artifact examined here; it does not prove that the historical CICIDS2017 CSVs were generated with this exact JAR, code path, or configuration. Preserve the existing dataset-provenance qualification. Do not change the frozen model, candidate detector, thresholds, or live-inference gate on the basis of this investigation alone.
