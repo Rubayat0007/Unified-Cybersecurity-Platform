@@ -3,8 +3,11 @@ import unittest
 from core.models.enums import (
     RecommendedAction,
     Severity,
+    SignalSource,
     SignalStatus,
+    SignalType,
 )
+from core.models.signal import SecuritySignal
 from core.orchestration.engine import assess
 
 
@@ -112,6 +115,33 @@ class TestOrchestrationEngine(unittest.TestCase):
             result.assessment.component_status["ai_nids"],
             SignalStatus.AVAILABLE,
         )
+
+    def test_mixed_phishvision_status_is_preserved_in_assessment_and_audit(self):
+        available = SecuritySignal(
+            source=SignalSource.PHISHVISION,
+            signal_type=SignalType.PHISHING,
+            status=SignalStatus.AVAILABLE,
+            severity=Severity.LOW,
+        )
+        failed = SecuritySignal(
+            source=SignalSource.PHISHVISION,
+            signal_type=SignalType.URL_THREAT,
+            status=SignalStatus.ERROR,
+            severity=Severity.UNKNOWN,
+        )
+
+        result = assess(phishvision_signals=(available, failed))
+
+        self.assertEqual(
+            result.assessment.component_status["phishvision"],
+            SignalStatus.ERROR,
+        )
+        self.assertEqual(
+            result.audit.source_statuses["phishvision"],
+            SignalStatus.ERROR,
+        )
+        self.assertEqual(result.assessment.overall_severity, Severity.LOW)
+        self.assertEqual(result.decision.action, RecommendedAction.MONITOR)
 
     def test_missing_both_sources_is_fail_safe(self):
         result = assess()

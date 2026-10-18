@@ -13,9 +13,9 @@ from core.policies.default_policy import (
 
 
 _STATUS_PRIORITY = {
-    SignalStatus.AVAILABLE: 5,
-    SignalStatus.ERROR: 4,
-    SignalStatus.TIMEOUT: 3,
+    SignalStatus.ERROR: 5,
+    SignalStatus.TIMEOUT: 4,
+    SignalStatus.AVAILABLE: 3,
     SignalStatus.UNAVAILABLE: 2,
     SignalStatus.NOT_APPLICABLE: 1,
 }

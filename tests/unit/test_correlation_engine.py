@@ -107,6 +107,48 @@ class TestCorrelationEngine(unittest.TestCase):
             SignalStatus.UNAVAILABLE,
         )
 
+    def test_component_status_reports_error_when_another_signal_is_available(self):
+        available = self._phishing_signal(Severity.LOW)
+        failed = SecuritySignal(
+            source=SignalSource.PHISHVISION,
+            signal_type=SignalType.URL_THREAT,
+            status=SignalStatus.ERROR,
+            severity=Severity.UNKNOWN,
+        )
+
+        assessment = correlate((available, failed))
+
+        self.assertEqual(
+            assessment.component_status["phishvision"],
+            SignalStatus.ERROR,
+        )
+        self.assertEqual(assessment.overall_severity, Severity.LOW)
+        self.assertEqual(
+            assessment.recommended_action,
+            RecommendedAction.MONITOR,
+        )
+
+    def test_component_status_reports_timeout_when_another_signal_is_available(self):
+        available = self._phishing_signal(Severity.LOW)
+        timed_out = SecuritySignal(
+            source=SignalSource.PHISHVISION,
+            signal_type=SignalType.URL_THREAT,
+            status=SignalStatus.TIMEOUT,
+            severity=Severity.UNKNOWN,
+        )
+
+        assessment = correlate((available, timed_out))
+
+        self.assertEqual(
+            assessment.component_status["phishvision"],
+            SignalStatus.TIMEOUT,
+        )
+        self.assertEqual(assessment.overall_severity, Severity.LOW)
+        self.assertEqual(
+            assessment.recommended_action,
+            RecommendedAction.MONITOR,
+        )
+
     def test_high_signal_with_unavailable_other_component(self):
         nids = self._nids_signal(Severity.HIGH)
 
