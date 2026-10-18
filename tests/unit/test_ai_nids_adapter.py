@@ -63,6 +63,30 @@ class TestAiNidsAdapter(unittest.TestCase):
         with self.assertRaises(ValueError):
             adapt_result(result)
 
+    def test_invalid_prediction_types_are_rejected(self):
+        for prediction in (0.7, True, "1"):
+            with self.subTest(prediction=prediction):
+                result = {
+                    "prediction": prediction,
+                    "confidence": 0.95,
+                    "attack_probability": 0.95,
+                    "severity": "HIGH",
+                }
+                with self.assertRaises(ValueError):
+                    adapt_result(result)
+
+    def test_zero_prediction_is_preserved(self):
+        result = {
+            "prediction": 0,
+            "confidence": 0.95,
+            "attack_probability": 0.05,
+            "severity": "LOW",
+        }
+
+        signal = adapt_result(result)
+
+        self.assertEqual(signal.metadata["prediction"], 0)
+
     def test_missing_required_field_is_rejected(self):
         result = {
             "prediction": 1,

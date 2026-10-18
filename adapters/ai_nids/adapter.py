@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from numbers import Integral
 from typing import Any
 
 from core.models.enums import (
@@ -75,7 +76,15 @@ def adapt_result(result: Mapping[str, Any]) -> SecuritySignal:
             f"{sorted(missing)}"
         )
 
-    prediction = int(result["prediction"])
+    prediction_value = result["prediction"]
+    if isinstance(prediction_value, bool) or not isinstance(
+        prediction_value, Integral
+    ):
+        raise ValueError(
+            "AI-NIDS prediction must be an integer 0 or 1"
+        )
+
+    prediction = int(prediction_value)
 
     if prediction not in {0, 1}:
         raise ValueError("AI-NIDS prediction must be 0 or 1")
