@@ -61,6 +61,63 @@ class TestAiNidsAdapter(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     adapt_result(result)
 
+    def test_optional_metadata_rejects_invalid_values(self):
+        base = {
+            "prediction": 1,
+            "confidence": 0.95,
+            "attack_probability": 0.91,
+            "severity": "HIGH",
+        }
+
+        invalid_cases = (
+            ("packet_count", True),
+            ("packet_count", -1),
+            ("packet_count", 1.5),
+            ("packet_count", "120"),
+            ("packet_count", {"count": 120}),
+            ("duration", True),
+            ("duration", -1),
+            ("duration", "8.0"),
+            ("duration", {"seconds": 8}),
+            ("duration", float("nan")),
+            ("duration", float("inf")),
+            ("duration", float("-inf")),
+        )
+
+        for field, value in invalid_cases:
+            with self.subTest(field=field, value=value):
+                with self.assertRaises(ValueError):
+                    adapt_result({**base, field: value})
+
+    def test_optional_metadata_accepts_none_and_non_negative_values(self):
+        base = {
+            "prediction": 1,
+            "confidence": 0.95,
+            "attack_probability": 0.91,
+            "severity": "HIGH",
+        }
+
+        absent = adapt_result(base)
+        self.assertIsNone(absent.metadata["packet_count"])
+        self.assertIsNone(absent.metadata["duration"])
+
+        explicit_none = adapt_result({
+            **base,
+            "packet_count": None,
+            "duration": None,
+        })
+        self.assertIsNone(explicit_none.metadata["packet_count"])
+        self.assertIsNone(explicit_none.metadata["duration"])
+
+        valid = adapt_result({
+            **base,
+            "packet_count": 0,
+            "duration": 0.0,
+        })
+        self.assertEqual(valid.metadata["packet_count"], 0)
+        self.assertEqual(valid.metadata["duration"], 0.0)
+
+
     def test_suspicious_severity_is_preserved(self):
         result = {
             "prediction": 1,

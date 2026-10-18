@@ -37,6 +37,35 @@ def _finite_number(value: Any, name: str) -> float:
     return result
 
 
+def _optional_non_negative_integer(
+    value: Any, name: str
+) -> int | None:
+    if value is None:
+        return None
+
+    if isinstance(value, bool) or not isinstance(value, Integral):
+        raise ValueError(f"{name} must be a non-negative integer")
+
+    result = int(value)
+    if result < 0:
+        raise ValueError(f"{name} must be a non-negative integer")
+
+    return result
+
+
+def _optional_non_negative_number(
+    value: Any, name: str
+) -> float | None:
+    if value is None:
+        return None
+
+    result = _finite_number(value, name)
+    if result < 0.0:
+        raise ValueError(f"{name} must be non-negative")
+
+    return result
+
+
 def _map_severity(value: Any) -> Severity | None:
     if value is None:
         return None
@@ -111,10 +140,17 @@ def adapt_result(result: Mapping[str, Any]) -> SecuritySignal:
 
     flows = result.get("flows", [])
 
+    packet_count = _optional_non_negative_integer(
+        result.get("packet_count"), "packet_count"
+    )
+    duration = _optional_non_negative_number(
+        result.get("duration"), "duration"
+    )
+
     metadata = {
         "prediction": prediction,
-        "packet_count": result.get("packet_count"),
-        "duration": result.get("duration"),
+        "packet_count": packet_count,
+        "duration": duration,
         "flow_count": len(flows) if isinstance(flows, list) else None,
     }
 
