@@ -66,6 +66,28 @@ class TestHttpApi(unittest.TestCase):
             ]
         )
 
+    def test_invalid_ai_nids_predictions_are_reported_as_source_errors(self):
+        for prediction in (0.7, True, "1"):
+            with self.subTest(prediction=prediction):
+                response = self.client.post(
+                    "/v1/assess",
+                    json={
+                        "ai_nids_result": {
+                            "prediction": prediction,
+                            "confidence": 0.95,
+                            "attack_probability": 0.95,
+                            "severity": "HIGH",
+                        },
+                    },
+                )
+
+                self.assertEqual(response.status_code, 200)
+                payload = response.json()
+                self.assertEqual(
+                    payload["assessment"]["component_status"]["ai_nids"],
+                    "error",
+                )
+
     def test_empty_request_is_fail_safe(self):
         response = self.client.post(
             "/v1/assess",
