@@ -61,6 +61,19 @@ class TestAiNidsAdapter(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     adapt_result(result)
 
+    def test_score_fields_reject_overflowing_integers(self):
+        base = {
+            "prediction": 1,
+            "confidence": 0.95,
+            "attack_probability": 0.91,
+            "severity": "HIGH",
+        }
+        oversized_integer = 10**10000
+        for field in ("confidence", "attack_probability"):
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(ValueError, "must be finite"):
+                    adapt_result({**base, field: oversized_integer})
+
     def test_optional_metadata_rejects_invalid_values(self):
         base = {
             "prediction": 1,

@@ -77,6 +77,28 @@ class TestFeatureParityCli(unittest.TestCase):
             self.assertIn("does not verify reference provenance",
                           payload["interpretation"])
 
+    def test_json_output_cannot_overwrite_input_csv(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            reference = folder / "reference.csv"
+            candidate = folder / "candidate.csv"
+            write_csv(reference, [make_record("flow-001")])
+            write_csv(candidate, [make_record("flow-001")])
+            original_reference = reference.read_bytes()
+            original_candidate = candidate.read_bytes()
+
+            result = self.run_cli(
+                reference,
+                candidate,
+                "--json-output",
+                str(reference),
+            )
+
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("must differ", result.stderr)
+            self.assertEqual(reference.read_bytes(), original_reference)
+            self.assertEqual(candidate.read_bytes(), original_candidate)
+
     def test_feature_mismatch_returns_one(self):
         with tempfile.TemporaryDirectory() as temporary:
             folder = Path(temporary)

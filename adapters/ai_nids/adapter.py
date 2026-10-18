@@ -29,7 +29,10 @@ def _finite_number(value: Any, name: str) -> float:
     if isinstance(value, bool) or not isinstance(value, Real):
         raise ValueError(f"{name} must be a real number")
 
-    result = float(value)
+    try:
+        result = float(value)
+    except OverflowError as exc:
+        raise ValueError(f"{name} must be finite") from exc
 
     if result != result or result in (float("inf"), float("-inf")):
         raise ValueError(f"{name} must be finite")

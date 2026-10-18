@@ -72,6 +72,19 @@ def main() -> int:
     parser.add_argument("--json-output", type=Path)
     args = parser.parse_args()
 
+    if args.json_output is not None:
+        output_path = args.json_output.resolve()
+        input_paths = {
+            args.reference.resolve(),
+            args.candidate.resolve(),
+        }
+        if output_path in input_paths:
+            print(
+                "JSON output path must differ from both input CSV paths",
+                file=sys.stderr,
+            )
+            return 2
+
     try:
         reference_records, reference_headers = load_feature_csv(
             args.reference, args.id_column
