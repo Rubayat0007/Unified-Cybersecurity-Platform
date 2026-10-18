@@ -139,6 +139,8 @@ def adapt_result(result: Mapping[str, Any]) -> SecuritySignal:
     severity = _map_severity(result["severity"])
 
     flows = result.get("flows", [])
+    if not isinstance(flows, list):
+        raise TypeError("AI-NIDS flows must be a list")
 
     packet_count = _optional_non_negative_integer(
         result.get("packet_count"), "packet_count"

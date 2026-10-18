@@ -88,6 +88,40 @@ class TestHttpApi(unittest.TestCase):
                     "error",
                 )
 
+    def test_invalid_ai_nids_flows_are_reported_as_source_errors(self):
+        for flows in (None, "not-a-list", {"flow": {}}):
+            with self.subTest(flows=flows):
+                response = self.client.post(
+                    "/v1/assess",
+                    json={
+                        "ai_nids_result": {
+                            "prediction": 1,
+                            "confidence": 0.95,
+                            "attack_probability": 0.95,
+                            "severity": "HIGH",
+                            "flows": flows,
+                        },
+                    },
+                )
+
+                self.assertEqual(response.status_code, 200)
+                payload = response.json()
+                self.assertEqual(
+                    payload["assessment"]["component_status"]["ai_nids"],
+                    "error",
+                )
+                self.assertEqual(
+                    payload["assessment"]["overall_severity"],
+                    "unknown",
+                )
+                self.assertEqual(
+                    payload["decision"]["action"],
+                    "investigate",
+                )
+                self.assertTrue(
+                    payload["decision"]["requires_human_review"]
+                )
+
     def test_empty_request_is_fail_safe(self):
         response = self.client.post(
             "/v1/assess",

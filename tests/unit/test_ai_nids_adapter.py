@@ -118,6 +118,33 @@ class TestAiNidsAdapter(unittest.TestCase):
         self.assertEqual(valid.metadata["duration"], 0.0)
 
 
+    def test_flows_must_be_a_list_when_provided(self):
+        base = {
+            "prediction": 1,
+            "confidence": 0.95,
+            "attack_probability": 0.91,
+            "severity": "HIGH",
+        }
+
+        for flows in (None, "not-a-list", {"flow": {}}, ({} ,)):
+            with self.subTest(flows=flows):
+                with self.assertRaises(TypeError):
+                    adapt_result({**base, "flows": flows})
+
+    def test_missing_and_empty_flows_are_accepted(self):
+        base = {
+            "prediction": 0,
+            "confidence": 0.95,
+            "attack_probability": 0.05,
+            "severity": "LOW",
+        }
+
+        self.assertEqual(adapt_result(base).metadata["flow_count"], 0)
+        self.assertEqual(
+            adapt_result({**base, "flows": []}).metadata["flow_count"],
+            0,
+        )
+
     def test_suspicious_severity_is_preserved(self):
         result = {
             "prediction": 1,
