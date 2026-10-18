@@ -40,6 +40,27 @@ class TestAiNidsAdapter(unittest.TestCase):
         self.assertEqual(signal.metadata["packet_count"], 120)
         self.assertEqual(signal.metadata["flow_count"], 2)
 
+    def test_score_fields_reject_booleans_and_numeric_strings(self):
+        base = {
+            "prediction": 1,
+            "confidence": 0.95,
+            "attack_probability": 0.95,
+            "severity": "HIGH",
+        }
+
+        invalid_values = (
+            ("confidence", True),
+            ("confidence", "0.95"),
+            ("attack_probability", True),
+            ("attack_probability", "0.95"),
+        )
+
+        for field, value in invalid_values:
+            with self.subTest(field=field, value=value):
+                result = {**base, field: value}
+                with self.assertRaises(ValueError):
+                    adapt_result(result)
+
     def test_suspicious_severity_is_preserved(self):
         result = {
             "prediction": 1,

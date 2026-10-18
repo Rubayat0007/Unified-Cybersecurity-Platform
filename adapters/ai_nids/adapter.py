@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from numbers import Integral
+from numbers import Integral, Real
 from typing import Any
 
 from core.models.enums import (
@@ -26,10 +26,10 @@ def _require_mapping(value: Any, name: str) -> Mapping[str, Any]:
 
 
 def _finite_number(value: Any, name: str) -> float:
-    try:
-        result = float(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"{name} must be numeric") from exc
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise ValueError(f"{name} must be a real number")
+
+    result = float(value)
 
     if result != result or result in (float("inf"), float("-inf")):
         raise ValueError(f"{name} must be finite")
