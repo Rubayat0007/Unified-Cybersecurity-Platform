@@ -1,0 +1,123 @@
+{
+  "_provenance_note": "captured from src.security.analyzer.PhishVisionAnalyzer with the v2 production checkpoint",
+  "cnn_analysis": {
+    "legitimate_probability": 0.6516032218933105,
+    "model_loaded": true,
+    "phishing_probability": 0.34839677810668945,
+    "prediction": "legitimate",
+    "threshold": 0.35
+  },
+  "model": {
+    "loaded": true,
+    "name": "phishvision_cnn_v2",
+    "sha256": "1403582CCE07BE1E36E70E4A0D425CFB152B86C7ABEE5D1074DEF79CBB2FB628",
+    "threshold": 0.35
+  },
+  "risk": {
+    "cnn_score": 34.84,
+    "overall_score": 36.44,
+    "risk_level": "MEDIUM",
+    "text_score": 30.0,
+    "url_score": 45.0
+  },
+  "security_assessment": {
+    "component_errors": [],
+    "component_scores": {
+      "cnn": 34.84,
+      "text": 30.0,
+      "url": 45.0
+    },
+    "evidence": [
+      {
+        "category": "account_verification",
+        "evidence": "verify your account",
+        "severity": "MEDIUM",
+        "source": "OCR"
+      },
+      {
+        "category": "credential_harvesting",
+        "evidence": "password",
+        "severity": "HIGH",
+        "source": "OCR"
+      },
+      {
+        "category": "urgency",
+        "evidence": "security alert",
+        "severity": "MEDIUM",
+        "source": "OCR"
+      },
+      {
+        "category": "transport_security",
+        "evidence": "URL uses HTTP instead of HTTPS",
+        "severity": "MEDIUM",
+        "source": "URL"
+      },
+      {
+        "category": "ip_hostname",
+        "evidence": "URL uses an IP address as the hostname",
+        "severity": "HIGH",
+        "source": "URL"
+      },
+      {
+        "category": "suspicious_url_keywords",
+        "evidence": "URL contains phishing-related keywords",
+        "severity": "MEDIUM",
+        "source": "URL"
+      },
+      {
+        "category": "suspicious_url_keyword",
+        "evidence": "login",
+        "severity": "MEDIUM",
+        "source": "URL"
+      },
+      {
+        "category": "suspicious_url_keyword",
+        "evidence": "verify",
+        "severity": "MEDIUM",
+        "source": "URL"
+      },
+      {
+        "category": "suspicious_url_keyword",
+        "evidence": "account",
+        "severity": "MEDIUM",
+        "source": "URL"
+      },
+      {
+        "category": "elevated_visual_signal",
+        "evidence": "CNN detected an elevated visual phishing signal with p(phishing)=0.3484, below the decision threshold of 0.35",
+        "severity": "MEDIUM",
+        "source": "CNN"
+      }
+    ],
+    "finding_count": 10,
+    "overall_score": 36.44,
+    "recommended_action": "Exercise caution. Verify the website and its domain through an independent trusted source before entering sensitive information.",
+    "risk_level": "MEDIUM",
+    "verdict": "MEDIUM RISK"
+  },
+  "text_analysis": {
+    "is_suspicious": true,
+    "matches": [
+      "verify your account",
+      "password",
+      "security alert"
+    ],
+    "score": 30
+  },
+  "url_analysis": {
+    "hostname": "192.168.1.10",
+    "indicators": [
+      "uses_http",
+      "ip_address",
+      "suspicious_keywords"
+    ],
+    "is_suspicious": true,
+    "matched_keywords": [
+      "login",
+      "verify",
+      "account"
+    ],
+    "score": 45,
+    "url": "http://192.168.1.10/login/verify-account"
+  }
+}
