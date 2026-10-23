@@ -56,9 +56,12 @@ docker run --rm -p 8000:8000 `
 ```
 
 Docker was not available on the machine where this was authored, so the image
-was **not built or run**. The Dockerfile is reviewed by reading, and the
-service itself is verified natively by `scripts/smoke_live.py`. Treat the
-image as unverified until a build succeeds.
+was **not built**. `scripts/container_smoke.py` verifies the contents the
+Dockerfile copies: a clean environment from `requirements.txt`, production
+startup with only the copied files, public `/health`, and `401`/`200` on
+`/v1/assess`. That check found a missing `dashboard/` copy which would have
+crashed the image at import time. Base image, layer caching, and the
+HEALTHCHECK instruction remain unverified until a real build succeeds.
 
 ## PhishVision runtime
 

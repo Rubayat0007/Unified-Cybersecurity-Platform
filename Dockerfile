@@ -14,6 +14,7 @@ COPY api ./api
 COPY core ./core
 COPY adapters ./adapters
 COPY tools ./tools
+COPY dashboard ./dashboard
 
 RUN useradd --create-home --shell /usr/sbin/nologin appuser
 USER appuser
