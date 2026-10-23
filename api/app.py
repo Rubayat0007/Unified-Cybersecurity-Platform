@@ -13,6 +13,13 @@ from typing import Any
 from core.config.settings import load_settings
 from core.models.enums import ComponentHealth
 from api.middleware import MaxRequestBodySizeMiddleware
+from api.auth import (
+    RateLimitMiddleware,
+    TokenAuthMiddleware,
+    TokenBucket,
+    resolve_rate_limit,
+    resolve_token,
+)
 
 from fastapi import FastAPI
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -113,6 +120,19 @@ app.add_middleware(
         "/v1/assess/image": settings.max_image_request_bytes,
     },
 )
+
+# Authentication is disabled unless UCP_API_TOKEN is set; production refuses
+# to start without it. Rate limiting wraps authentication so unauthenticated
+# floods are throttled before token comparison.
+_auth_token = resolve_token(settings.environment)
+_rate_limit = resolve_rate_limit(settings.environment)
+
+app.add_middleware(TokenAuthMiddleware, token=_auth_token)
+if _rate_limit is not None:
+    app.add_middleware(
+        RateLimitMiddleware,
+        bucket=TokenBucket(*_rate_limit),
+    )
 
 DASHBOARD_DIR = Path(__file__).resolve().parents[1] / "dashboard"
 
