@@ -246,3 +246,19 @@ docs/                        Project documentation, where present
 - **PhishVision-AI:** text, URL, and visual phishing analysis.
 
 The unified platform provides the contracts, API, correlation, decisions, and audit layer between these independent projects.
+
+## Claims to evidence
+
+Ledger: `docs/ledger.md`. A capability without a row is not claimed.
+
+| Claim | Evidence | Status |
+|---|---|---|
+| 196 unit + 35 integration tests pass | `R-UCP-tests-01` | verified |
+| PhishVision adapter pinned to recorded real analyzer output | `R-UCP-fixture-01` | verified |
+| Bearer auth: 401 without token, 200 with; production refuses to start without one | `R-UCP-auth-01` | verified live |
+| Rate limiting throttles bursts (13/40 rejected at default capacity) | `R-UCP-auth-01` | verified live, single process |
+| Full chain works: uvicorn → worker → OCR+CNN → adapter → decision | `R-UCP-smoke-01` | verified live |
+| Container **contents** verified; missing `dashboard/` copy found and fixed | `R-UCP-container-01` | verified without daemon |
+| Cross-domain correlation: benign capture = no corroboration; two threat sources = corroboration | `R-UCP-crossdomain-01` | verified |
+| Container image builds and runs | `R-UCP-image-01` | **not verified — never built** |
+| TLS, user identity, durable audit, multi-worker rate limiting | — | **not claimed** |
