@@ -28,6 +28,7 @@ from api.schemas import UnifiedAssessmentResponse
 from api.serialization import serialize_assessment
 from api.service import run_assessment
 from api import audit_sink
+from api.observability import JsonRequestLogMiddleware, metrics
 
 
 MAX_DEPTH = 8
@@ -135,6 +136,9 @@ if _rate_limit is not None:
         bucket=TokenBucket(*_rate_limit),
     )
 
+# Outermost: every response, including 401 and 429, is logged and counted.
+app.add_middleware(JsonRequestLogMiddleware)
+
 DASHBOARD_DIR = Path(__file__).resolve().parents[1] / "dashboard"
 
 app.mount(
@@ -173,6 +177,11 @@ def health() -> dict[str, str]:
         "status": "ok",
         "environment": settings.environment,
     }
+
+
+@app.get("/metrics")
+def metrics_endpoint() -> dict[str, object]:
+    return metrics.snapshot()
 
 
 @app.get("/ready")
