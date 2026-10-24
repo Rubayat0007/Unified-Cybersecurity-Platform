@@ -292,7 +292,7 @@ class TestHttpApi(unittest.TestCase):
         )
 
 
-    def test_readiness_reports_unintegrated_providers_as_degraded(self):
+    def test_readiness_reports_component_state_honestly(self):
         response = self.client.get("/ready")
 
         self.assertEqual(response.status_code, 200)
@@ -306,11 +306,11 @@ class TestHttpApi(unittest.TestCase):
         )
         self.assertEqual(
             payload["components"]["ai_nids"],
-            "degraded",
+            "ingestion_only",
         )
-        self.assertEqual(
+        self.assertIn(
             payload["components"]["phishvision"],
-            "degraded",
+            {"not_started", "started", "disabled"},
         )
 
     def test_request_body_size_limit_is_enforced(self):

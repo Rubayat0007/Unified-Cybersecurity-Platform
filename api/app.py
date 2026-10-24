@@ -176,17 +176,17 @@ def health() -> dict[str, str]:
 
 @app.get("/ready")
 def readiness() -> dict[str, object]:
+    """Report component state honestly: lazy worker means "not_started"."""
+    if not settings.phishvision_enabled:
+        phishvision = "disabled"
+    elif _phishvision_provider is None:
+        phishvision = "not_started"
+    else:
+        phishvision = "started"
+
     components = {
-        "ai_nids": (
-            ComponentHealth.DEGRADED.value
-            if settings.ai_nids_enabled
-            else ComponentHealth.UNAVAILABLE.value
-        ),
-        "phishvision": (
-            ComponentHealth.DEGRADED.value
-            if settings.phishvision_enabled
-            else ComponentHealth.UNAVAILABLE.value
-        ),
+        "ai_nids": "ingestion_only" if settings.ai_nids_enabled else "disabled",
+        "phishvision": phishvision,
     }
 
     return {
