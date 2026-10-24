@@ -36,3 +36,59 @@ jobs:
 
       - name: Integration tests
         run: python -m unittest discover -s tests/integration -p "test_*.py" -v
+
+  container:
+    name: Container build and healthcheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t ucp:ci .
+
+      - name: Start container in production mode
+        run: |
+          docker run -d --name ucp-ci -p 8000:8000 \
+            -e UCP_ENVIRONMENT=production \
+            -e UCP_API_TOKEN=ci-token \
+            ucp:ci
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health > /dev/null; then
+              echo "healthy after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "container did not become healthy"; docker logs ucp-ci; exit 1
+
+      - name: Readiness reports component state
+        run: |
+          curl -fsS http://127.0.0.1:8000/ready | tee /tmp/ready.json
+          grep -q '"phishvision"' /tmp/ready.json
+
+      - name: Authentication is enforced in production
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" -d '{}' http://127.0.0.1:8000/v1/assess)
+          test "$code" = "401" || { echo "expected 401, got $code"; exit 1; }
+
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" -H "Authorization: Bearer ci-token" \
+            -d '{}' http://127.0.0.1:8000/v1/assess)
+          test "$code" = "200" || { echo "expected 200 with token, got $code"; exit 1; }
+
+      - name: Record image digest
+        run: docker inspect --format='{{index .RepoDigests 0}}' ucp:ci || true
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs ucp-ci || true
+
+      - name: Clean up
+        if: always()
+        run: docker rm -f ucp-ci || true
