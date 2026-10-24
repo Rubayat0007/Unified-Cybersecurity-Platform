@@ -386,4 +386,19 @@ def adapt_result(
 
     signals.append(cnn_signal)
 
+    # Propagate the analyzer's model provenance so a unified response can be
+    # traced to the exact checkpoint and threshold that produced it.
+    model = result.get("model")
+
+    if isinstance(model, Mapping):
+        provenance = {
+            "model_name": model.get("name"),
+            "model_sha256": model.get("sha256"),
+            "model_threshold": model.get("threshold"),
+            "model_loaded": model.get("loaded"),
+        }
+
+        for signal in signals:
+            signal.metadata.update(provenance)
+
     return tuple(signals)
