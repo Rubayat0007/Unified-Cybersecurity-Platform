@@ -27,6 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from api.schemas import UnifiedAssessmentResponse
 from api.serialization import serialize_assessment
 from api.service import run_assessment
+from api import audit_sink
 
 
 MAX_DEPTH = 8
@@ -209,6 +210,14 @@ def assess_endpoint(
         event_id=request.event_id,
     )
 
+    try:
+        audit_sink.record(result)
+    except audit_sink.AuditUnavailable as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="assessment could not be recorded in the audit trail",
+        ) from exc
+
     return serialize_assessment(result)
 
 
@@ -301,5 +310,13 @@ async def assess_image_endpoint(
             event_id=event_id,
             phishvision_signals=provider_result.signals,
         )
+
+    try:
+        audit_sink.record(result)
+    except audit_sink.AuditUnavailable as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="assessment could not be recorded in the audit trail",
+        ) from exc
 
     return serialize_assessment(result)
