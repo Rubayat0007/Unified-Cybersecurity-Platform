@@ -79,6 +79,24 @@ Provider failure (worker crash, timeout, malformed output) is **not** a 5xx:
 it becomes `error` signals for every PhishVision component, and the response
 is a `200` with a fail-safe decision. Malformed *client* input is a 4xx.
 
+## Reliability gate
+
+A benign verdict must be backed by a measured reliability profile. A signal
+carries `metadata["sensitivity_lower"]` when its detector has a profile; if no
+available signal meets the floor (default `0.5`, override with
+`UCP_RELIABILITY_FLOOR`), a would-be `ALLOW` is escalated:
+
+- `decision.severity` becomes `unknown`,
+- `decision.action` becomes `investigate`,
+- `requires_human_review` becomes `true`,
+- the reason names the cause ("no available signal carries a reliability
+  profile at or above the floor").
+
+`assessment.overall_severity` is unchanged: correlation reports what the signals
+say, the decision layer decides what may be concluded. Absent a profile, a
+sensor is treated as unable to speak for safety - the same rule as a missing
+signal, one level up.
+
 ## Payload limits
 
 `MAX_DEPTH 8`, `MAX_TOTAL_NODES 2048`, `MAX_COLLECTION_ITEMS 128`,

@@ -103,6 +103,59 @@ def load(path: Path | str) -> ReliabilityProfile:
     return from_dict(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
+DEFAULT_FLOOR = 0.5
+
+
+def resolve_floor(environ=None) -> float:
+    """Floor for the benign-verdict gate, overridable by environment."""
+    import os
+
+    raw = (environ if environ is not None else os.environ).get("UCP_RELIABILITY_FLOOR")
+
+    if raw is None or not str(raw).strip():
+        return DEFAULT_FLOOR
+
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise ValueError("UCP_RELIABILITY_FLOOR must be numeric") from exc
+
+    if not 0.0 < value < 1.0:
+        raise ValueError("UCP_RELIABILITY_FLOOR must be within (0, 1)")
+
+    return value
+
+
+def signal_is_informative(signal, floor: float) -> bool:
+    """A signal may speak for safety only if it carries a measured bound."""
+    metadata = getattr(signal, "metadata", None) or {}
+
+    if not isinstance(metadata, dict):
+        return False
+
+    value = metadata.get("sensitivity_lower")
+
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+
+    return float(value) >= floor
+
+
+def has_informative_benign(signals, floor: float) -> bool:
+    """True when at least one available signal can justify a benign verdict."""
+    for signal in signals:
+        status = getattr(signal, "status", None)
+        status_value = getattr(status, "value", status)
+
+        if status_value != "available":
+            continue
+
+        if signal_is_informative(signal, floor):
+            return True
+
+    return False
+
+
 def gate(profiles: dict[str, ReliabilityProfile | None], floor: float) -> dict:
     """Decide which providers may speak for safety.
 

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from core.decision.assessment import SecurityAssessment
 from core.models.enums import RecommendedAction, Severity
+from core.reliability import has_informative_benign, resolve_floor
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,20 @@ def decide(assessment: SecurityAssessment) -> OperationalDecision:
             RecommendedAction.INVESTIGATE,
             RecommendedAction.BLOCK,
         }
+
+    # A benign verdict needs measured support. Without a reliability profile at
+    # or above the floor, the platform cannot claim the event is safe - missing
+    # or weak evidence is not safety.
+    if action is RecommendedAction.ALLOW and not has_informative_benign(
+        assessment.signals, resolve_floor()
+    ):
+        severity = Severity.UNKNOWN
+        action = RecommendedAction.INVESTIGATE
+        requires_human_review = True
+        reason = (
+            f"{reason} No available signal carries a reliability profile at or "
+            "above the floor, so a benign verdict cannot justify ALLOW."
+        )
 
     return OperationalDecision(
         severity=severity,

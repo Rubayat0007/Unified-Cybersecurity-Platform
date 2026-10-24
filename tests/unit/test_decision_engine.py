@@ -93,7 +93,7 @@ class TestDecisionEngine(unittest.TestCase):
         self.assertEqual(decision.action, RecommendedAction.WARN)
         self.assertFalse(decision.requires_human_review)
 
-    def test_minimal_assessment_allows(self):
+    def test_minimal_assessment_without_reliability_escalates(self):
         assessment = correlate(
             (
                 self._signal(
@@ -106,8 +106,10 @@ class TestDecisionEngine(unittest.TestCase):
 
         decision = decide(assessment)
 
-        self.assertEqual(decision.action, RecommendedAction.ALLOW)
-        self.assertFalse(decision.requires_human_review)
+        self.assertEqual(decision.action, RecommendedAction.INVESTIGATE)
+        self.assertEqual(decision.severity, Severity.UNKNOWN)
+        self.assertTrue(decision.requires_human_review)
+        self.assertIn("cannot justify ALLOW", decision.reason)
 
     def test_unknown_assessment_is_fail_safe(self):
         assessment = correlate(())
