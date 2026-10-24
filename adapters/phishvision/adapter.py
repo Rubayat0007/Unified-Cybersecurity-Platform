@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from core.evidence.model import Evidence
+from core.reliability import bounds_for_digest
 from core.models.enums import (
     Severity,
     SignalSource,
@@ -400,5 +401,16 @@ def adapt_result(
 
         for signal in signals:
             signal.metadata.update(provenance)
+
+    # Attach the measured reliability bounds for this exact digest, when a
+    # published profile exists. Unmeasured models stay unmeasured - the gate
+    # treats that as "no evidence for a benign claim".
+    bounds = bounds_for_digest(
+        model.get("sha256") if isinstance(model, Mapping) else None
+    )
+
+    if bounds:
+        for signal in signals:
+            signal.metadata.update(bounds)
 
     return tuple(signals)

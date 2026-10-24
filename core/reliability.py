@@ -132,10 +132,10 @@ def resolve_floor(environ=None) -> float:
     return value
 
 
-def signal_is_informative(signal, floor: float) -> bool:
-    """A signal may speak for safety only if it carries a measured bound."""
-    metadata = getattr(signal, "metadata", None) or {}
-
+def reliability_from_metadata(
+    metadata, floor: float, fpr_ceiling: float = 0.2
+) -> bool:
+    """Both bounds must pass: can detect, and does not over-fire."""
     if not isinstance(metadata, dict):
         return False
 
@@ -146,7 +146,14 @@ def signal_is_informative(signal, floor: float) -> bool:
         if not isinstance(value, (int, float)) or isinstance(value, bool):
             return False
 
-    return float(sensitivity) >= floor and float(fpr_upper) <= 0.2
+    return float(sensitivity) >= floor and float(fpr_upper) <= fpr_ceiling
+
+
+def signal_is_informative(signal, floor: float) -> bool:
+    """A signal may speak for safety only if it carries a measured bound."""
+    metadata = getattr(signal, "metadata", None) or {}
+
+    return reliability_from_metadata(metadata, floor)
 
 
 def has_informative_benign(signals, floor: float) -> bool:
@@ -162,6 +169,48 @@ def has_informative_benign(signals, floor: float) -> bool:
             return True
 
     return False
+
+
+PROFILE_DIR = Path(__file__).resolve().parents[1] / "docs" / "profiles"
+
+
+def profiles_by_digest(directory: Path | str = PROFILE_DIR) -> dict[str, ReliabilityProfile]:
+    """Load every published profile, keyed by model digest.
+
+    A malformed profile is skipped rather than crashing the request path: an
+    unreadable profile must mean "no evidence", never a 500.
+    """
+    result: dict[str, ReliabilityProfile] = {}
+    folder = Path(directory)
+
+    if not folder.is_dir():
+        return result
+
+    for file in sorted(folder.glob("*.json")):
+        try:
+            profile = load(file)
+        except (ValueError, OSError):
+            continue
+        result[profile.model_digest.upper()] = profile
+
+    return result
+
+
+def bounds_for_digest(digest: str | None, directory: Path | str = PROFILE_DIR) -> dict | None:
+    """Return the metadata bounds for a model digest, or None if unmeasured."""
+    if not digest:
+        return None
+
+    profile = profiles_by_digest(directory).get(str(digest).upper())
+
+    if profile is None:
+        return None
+
+    return {
+        "sensitivity_lower": profile.sensitivity_lower,
+        "false_positive_upper": profile.false_positive_upper,
+        "reliability_provider": profile.provider,
+    }
 
 
 def gate(profiles: dict[str, ReliabilityProfile | None], floor: float) -> dict:
