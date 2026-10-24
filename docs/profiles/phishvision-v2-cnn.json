@@ -1,0 +1,15 @@
+{
+  "commit": "05125d1",
+  "conditions": "screenshots, no URL, 555-image v2 dataset, cluster-disjoint split",
+  "evaluation_set": "clean_split_v2 cluster-disjoint test (development)",
+  "false_positive_rate": 0.4286,
+  "false_positive_upper": 0.5673,
+  "model_digest": "1403582CCE07BE1E36E70E4A0D425CFB152B86C7ABEE5D1074DEF79CBB2FB628",
+  "n_negative": 49,
+  "n_positive": 34,
+  "provider": "phishvision",
+  "sensitivity": 0.7059,
+  "sensitivity_lower": 0.5383,
+  "threshold": 0.35,
+  "valid_until": "2027-04-24"
+}

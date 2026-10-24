@@ -1,0 +1,15 @@
+{
+  "commit": "7f06ba7",
+  "conditions": "loopback lab scenarios and one host, 45 s benign window",
+  "evaluation_set": "live loopback scenarios + real benign window (development)",
+  "false_positive_rate": 0.0,
+  "false_positive_upper": 0.0787,
+  "model_digest": "1992228DFDC81529D8F87028252688AB39BC5AEB66A7AA2C5A38D164C831B3F2",
+  "n_negative": 45,
+  "n_positive": 75,
+  "provider": "ai_nids",
+  "sensitivity": 0.0,
+  "sensitivity_lower": 0.0,
+  "threshold": 0.5,
+  "valid_until": "2027-04-24"
+}

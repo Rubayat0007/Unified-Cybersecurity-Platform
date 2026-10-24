@@ -64,14 +64,20 @@ class ReliabilityProfile:
         if not 0.0 <= self.threshold <= 1.0:
             raise ValueError("threshold must be within [0, 1]")
 
-    def benign_verdict_is_informative(self, floor: float) -> bool:
-        """True when a benign verdict from this signal carries weight.
+    def benign_verdict_is_informative(
+        self, floor: float, fpr_ceiling: float = 0.2
+    ) -> bool:
+        """True when a benign verdict from this signal carries evidence weight.
 
-        A signal whose lower-bound sensitivity is below the floor is treated as
-        unable to speak for safety: its benign verdict must not lower severity
-        and must not justify ALLOW on its own.
+        Two conditions, because they answer different questions:
+        - sensitivity_lower >= floor: the detector can actually find attacks, so
+          its "nothing here" means something;
+        - false_positive_upper <= fpr_ceiling: it does not fire indiscriminately.
+
+        A sensor that never fires (sensitivity 0) or fires constantly (FPR ~1)
+        cannot speak for safety, however the other bound looks.
         """
-        return self.sensitivity_lower >= floor
+        return self.sensitivity_lower >= floor and self.false_positive_upper <= fpr_ceiling
 
     def as_dict(self) -> dict:
         return {name: getattr(self, name) for name in REQUIRED}
@@ -133,12 +139,14 @@ def signal_is_informative(signal, floor: float) -> bool:
     if not isinstance(metadata, dict):
         return False
 
-    value = metadata.get("sensitivity_lower")
+    sensitivity = metadata.get("sensitivity_lower")
+    fpr_upper = metadata.get("false_positive_upper")
 
-    if not isinstance(value, (int, float)) or isinstance(value, bool):
-        return False
+    for value in (sensitivity, fpr_upper):
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return False
 
-    return float(value) >= floor
+    return float(sensitivity) >= floor and float(fpr_upper) <= 0.2
 
 
 def has_informative_benign(signals, floor: float) -> bool:

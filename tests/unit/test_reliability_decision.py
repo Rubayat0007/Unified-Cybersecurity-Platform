@@ -13,8 +13,13 @@ from core.models.signal import SecuritySignal
 from core.reliability import resolve_floor, signal_is_informative
 
 
-def signal(severity=Severity.MINIMAL, sensitivity_lower=None, status=SignalStatus.AVAILABLE):
-    metadata = {} if sensitivity_lower is None else {"sensitivity_lower": sensitivity_lower}
+def signal(severity=Severity.MINIMAL, sensitivity_lower=None, status=SignalStatus.AVAILABLE,
+           false_positive_upper=0.1):
+    metadata = (
+        {} if sensitivity_lower is None
+        else {"sensitivity_lower": sensitivity_lower,
+              "false_positive_upper": false_positive_upper}
+    )
     return SecuritySignal(
         source=SignalSource.PHISHVISION,
         signal_type=SignalType.PHISHING,
