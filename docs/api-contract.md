@@ -82,9 +82,18 @@ is a `200` with a fail-safe decision. Malformed *client* input is a 4xx.
 ## Reliability gate
 
 A benign verdict must be backed by a measured reliability profile. A signal
-carries `metadata["sensitivity_lower"]` when its detector has a profile; if no
-available signal meets the floor (default `0.5`, override with
-`UCP_RELIABILITY_FLOOR`), a would-be `ALLOW` is escalated:
+carries `metadata["sensitivity_lower"]` and `metadata["false_positive_upper"]`
+when its detector has a profile. Both bounds must pass:
+
+- `sensitivity_lower >= floor` (default `0.5`, override with
+  `UCP_RELIABILITY_FLOOR`) - the detector can actually find attacks, so its
+  silence carries information;
+- `false_positive_upper <= 0.2` - it does not fire indiscriminately on benign
+  input.
+
+A sensor that never fires (sensitivity 0) fails the first bound; one that flags
+almost everything fails the second. Failing either means a would-be `ALLOW` is
+escalated:
 
 - `decision.severity` becomes `unknown`,
 - `decision.action` becomes `investigate`,
@@ -96,6 +105,10 @@ available signal meets the floor (default `0.5`, override with
 say, the decision layer decides what may be concluded. Absent a profile, a
 sensor is treated as unable to speak for safety - the same rule as a missing
 signal, one level up.
+
+Published profiles live in `docs/profiles/`. As measured, both detectors fail
+this gate: PhishVision's FPR upper bound is 0.570 and AI-NIDS's sensitivity
+lower bound is 0.000, so the platform escalates rather than says `ALLOW`.
 
 ## Payload limits
 
