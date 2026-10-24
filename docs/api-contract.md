@@ -8,7 +8,7 @@ the source of truth; this document records the promises the tests pin.
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/health` | process liveness; returns environment |
-| `GET` | `/ready` | component readiness; both components report `degraded` in result-ingestion mode |
+| `GET` | `/ready` | component state honestly: `ingestion_only` for AI-NIDS; `not_started` / `started` / `disabled` for the lazy PhishVision worker |
 | `POST` | `/v1/assess` | assess already-produced detector results (JSON body) |
 | `POST` | `/v1/assess/image` | run PhishVision on raw image bytes, then assess |
 | `GET` | `/dashboard` | static operator dashboard |
