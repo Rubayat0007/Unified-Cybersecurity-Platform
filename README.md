@@ -203,7 +203,31 @@ python -m compileall api core adapters
 git diff --check
 ```
 
-The tests cover contracts, adapters, severity/correlation policy, operational decisions, provider and worker lifecycle, request limits, error handling, HTTP endpoints, and dashboard serving. The live PhishVision inference path has also been manually verified with a phishing image and a legitimate image; model results may differ for other inputs.
+The tests cover contracts, adapters, severity/correlation policy, operational
+decisions, provider and worker lifecycle, request limits, error handling, HTTP
+endpoints, and dashboard serving. The live PhishVision inference path has also been
+manually verified with a phishing image and a legitimate image; model results may
+differ for other inputs.
+
+Latest recorded local verification: **245 unit tests and 35 integration tests
+passing**.
+
+## Security hardening
+
+| Control | Behaviour |
+|---|---|
+| Authentication | Bearer token compared with `hmac.compare_digest`; 401 with `WWW-Authenticate` |
+| Startup | production refuses to start without `UCP_API_TOKEN` |
+| Rate limiting | per-client token bucket, 429 with `Retry-After` (production by default) |
+| Request limits | body size, nesting depth, node count, content type |
+| Logging | one JSON line per request (id, method, path, status, duration) - no headers, query strings or bodies |
+| Audit | append-only hash-chained store; fails closed with 503 if the record cannot be written |
+| Provenance | model digest and threshold propagated into every emitted signal |
+| Reliability gate | `ALLOW` requires measured sensitivity lower bound and FPR upper bound; both detector profiles fail it, so the platform escalates |
+| Threat model | STRIDE per trust boundary with residual risks (`docs/threat-model.md`) and `SECURITY.md` |
+| Container CI | image build, healthcheck, `/ready`, 401-without-token and 200-with-token asserted |
+
+Published detector profiles live in `docs/profiles/`.
 
 ## Repository structure
 
